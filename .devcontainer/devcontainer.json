@@ -3,10 +3,19 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "forwardPorts": [3000],
+  "forwardPorts": [
+    3000
+  ],
   "portsAttributes": {
-    "3000": { "label": "Braid web", "onAutoForward": "openPreview" },
-    "5432": { "label": "Postgres", "onAutoForward": "silent" }
+    "3000": {
+      "label": "Braid web",
+      "protocol": "http",
+      "onAutoForward": "openPreview"
+    },
+    "5432": {
+      "label": "Postgres",
+      "onAutoForward": "silent"
+    }
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "customizations": {
