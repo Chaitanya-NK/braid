@@ -1,5 +1,6 @@
 import {
   boolean,
+  customType,
   index,
   integer,
   pgEnum,
@@ -126,6 +127,23 @@ export const page = pgTable(
   },
   (t) => [index("page_workspace_idx").on(t.workspaceId)],
 );
+
+/** Postgres bytea, read and written as a Node Buffer. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType: () => "bytea",
+});
+
+/**
+ * The live content of a doc (and later boards and canvases): the Yjs
+ * document encoded as one binary blob. Written by the sync server.
+ */
+export const pageDoc = pgTable("page_doc", {
+  pageId: uuid("page_id")
+    .primaryKey()
+    .references(() => page.id, { onDelete: "cascade" }),
+  state: bytea("state").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
 
 export type Workspace = typeof workspace.$inferSelect;
 export type Page = typeof page.$inferSelect;

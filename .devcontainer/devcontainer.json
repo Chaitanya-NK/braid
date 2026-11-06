@@ -4,7 +4,8 @@
   "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "forwardPorts": [
-    3000
+    3000,
+    1234
   ],
   "portsAttributes": {
     "3000": {
@@ -14,6 +15,11 @@
     },
     "5432": {
       "label": "Postgres",
+      "onAutoForward": "silent"
+    },
+    "1234": {
+      "label": "Braid sync",
+      "protocol": "http",
       "onAutoForward": "silent"
     }
   },

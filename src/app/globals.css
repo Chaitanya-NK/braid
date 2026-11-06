@@ -87,3 +87,140 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Doc editor (Tiptap). Plain CSS so it's easy to tweak.               */
+/* ------------------------------------------------------------------ */
+.braid-prose {
+  min-height: 50vh;
+  outline: none;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+.braid-prose > * + * {
+  margin-top: 0.75em;
+}
+.braid-prose h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-top: 1.2em;
+}
+.braid-prose h2 {
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin-top: 1.1em;
+}
+.braid-prose h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1em;
+}
+.braid-prose ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.braid-prose ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+.braid-prose li > p {
+  margin: 0;
+}
+.braid-prose ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.25rem;
+}
+.braid-prose ul[data-type="taskList"] li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+.braid-prose ul[data-type="taskList"] li > label {
+  margin-top: 0.3em;
+  user-select: none;
+}
+.braid-prose ul[data-type="taskList"] li > label input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--brand);
+}
+.braid-prose ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+.braid-prose blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  color: #3f3f46;
+}
+.braid-prose code {
+  background: #f4f4f5;
+  border-radius: 0.3rem;
+  padding: 0.1em 0.35em;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.9em;
+}
+.braid-prose pre {
+  background: #18181b;
+  color: #e4e4e7;
+  border-radius: 0.6rem;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.9rem;
+}
+.braid-prose pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+.braid-prose hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+.braid-prose a {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* Placeholder on the empty first line */
+.braid-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #a1a1aa;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Other people's cursors and selections */
+.collaboration-carets__caret {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 2px solid;
+  border-right: none;
+  word-break: normal;
+  pointer-events: none;
+}
+.collaboration-carets__label {
+  position: absolute;
+  top: -1.45em;
+  left: -2px;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem 0.3rem 0.3rem 0;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  user-select: none;
+}
+.ProseMirror-yjs-selection {
+  opacity: 0.35;
+}

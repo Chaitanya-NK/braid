@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requirePage } from "@/lib/dal";
 import { timeAgo } from "@/lib/utils";
+import { DocEditor } from "@/components/editor/doc-editor";
 import { MoveToTrashButton } from "../../page-actions";
 import { TitleEditor } from "./title-editor";
 
@@ -20,7 +21,7 @@ export default function PageView({ params }: PageProps<"/w/[slug]/p/[pageId]">) 
 
 async function PageContent({ params }: { params: Promise<{ slug: string; pageId: string }> }) {
   const { slug, pageId } = await params;
-  const { workspace, page, role } = await requirePage(slug, pageId);
+  const { user, color, workspace, page, role } = await requirePage(slug, pageId);
   const canEdit = role !== "guest" && !page.archivedAt;
 
   return (
@@ -50,14 +51,20 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
         )}
         <p className="text-sm text-muted-foreground">Last updated {timeAgo(page.updatedAt)}</p>
 
-        <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-card p-10 text-center">
-          <p className="font-medium">
-            The live {KIND_LABEL[page.kind].toLowerCase()} editor arrives in {comingIn[page.kind]}.
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            For now you can rename this page, or move it to Trash.
-          </p>
-        </div>
+        {page.kind === "doc" ? (
+          <div className="mt-4">
+            <DocEditor pageId={page.id} me={{ name: user.name, color }} readOnly={!canEdit} />
+          </div>
+        ) : (
+          <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-card p-10 text-center">
+            <p className="font-medium">
+              The live {KIND_LABEL[page.kind].toLowerCase()} editor arrives in {comingIn[page.kind]}.
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              For now you can rename this page, or move it to Trash.
+            </p>
+          </div>
+        )}
       </article>
     </div>
   );
