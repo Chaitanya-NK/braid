@@ -9,7 +9,8 @@ export function SignedOutToast() {
   const signedOut = useSearchParams().get("signed-out");
   useEffect(() => {
     if (!signedOut) return;
-    toast.success("Signed out");
+    // Fixed id so React dev mode running effects twice shows one toast, not two.
+    toast.success("Signed out", { id: "signed-out" });
     window.history.replaceState(null, "", window.location.pathname);
   }, [signedOut]);
   return null;

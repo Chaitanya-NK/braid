@@ -13,8 +13,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full`}>
       <body className="flex min-h-full flex-col font-sans">
-        {children}
+        {/* Rendered before the page so it's listening before any page code calls toast(). */}
         <Toaster position="bottom-right" richColors closeButton />
+        {children}
       </body>
     </html>
   );
