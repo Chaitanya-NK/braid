@@ -1,5 +1,6 @@
 import { House, Plus, Settings, Trash2 } from "lucide-react";
 import { KIND_LABEL, PageIcon } from "@/components/page-icon";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createPage } from "@/lib/actions";
 import { listMyWorkspaces, listPages, requireWorkspace } from "@/lib/dal";
@@ -48,17 +49,19 @@ export async function Sidebar({ params }: { params: Promise<{ slug: string }> })
       <form action={createPage} className="mt-2 flex gap-1 px-1">
         <input type="hidden" name="workspaceId" value={workspace.id} />
         {(["doc", "board", "canvas"] as const).map((kind) => (
-          <button
+          <Button
             key={kind}
             type="submit"
             name="kind"
             value={kind}
+            variant="outline"
+            size="sm"
             aria-label={`New ${KIND_LABEL[kind].toLowerCase()}`}
-            className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-md border border-dashed border-zinc-300 text-xs text-muted-foreground hover:border-brand hover:text-brand"
+            className="h-9 flex-1 gap-1 border-dashed px-1 text-xs text-muted-foreground shadow-none hover:border-brand hover:text-brand"
           >
             <Plus className="size-3.5" aria-hidden="true" />
             {KIND_LABEL[kind]}
-          </button>
+          </Button>
         ))}
       </form>
 

@@ -22,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Card, Column } from "@/lib/board-model";
 import { cn } from "@/lib/utils";
@@ -73,7 +74,7 @@ export function BoardColumn(props: Props) {
             <label htmlFor={`rename-${column.id}`} className="sr-only">
               Column name
             </label>
-            <input
+            <Input
               id={`rename-${column.id}`}
               name="title"
               defaultValue={column.title}
@@ -81,7 +82,7 @@ export function BoardColumn(props: Props) {
               maxLength={60}
               onBlur={(e) => e.currentTarget.form?.requestSubmit()}
               onKeyDown={(e) => e.key === "Escape" && setRenaming(false)}
-              className="h-8 w-full rounded-md border border-input bg-card px-2 text-sm font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/30"
+              className="h-8 px-2 text-sm font-semibold"
             />
           </form>
         ) : (
@@ -90,11 +91,15 @@ export function BoardColumn(props: Props) {
         <span className="text-xs text-muted-foreground">{column.cards.length}</span>
         {canEdit && (
           <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label={`${column.title} column options`}
-              className="grid size-8 place-items-center rounded-md text-muted-foreground outline-none hover:bg-black/5 focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            >
-              <MoreHorizontal className="size-4" />
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`${column.title} column options`}
+                className="size-8 text-muted-foreground hover:bg-black/5"
+              >
+                <MoreHorizontal />
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={() => setRenaming(true)}>
@@ -180,13 +185,14 @@ export function BoardColumn(props: Props) {
             </div>
           </form>
         ) : (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setAdding(true)}
-            className="flex min-h-9 items-center gap-1.5 rounded-md px-2 text-sm text-muted-foreground hover:bg-black/5 hover:text-foreground"
+            className="h-9 justify-start text-muted-foreground hover:bg-black/5"
           >
-            <Plus className="size-4" aria-hidden="true" /> Add card
-          </button>
+            <Plus aria-hidden="true" /> Add card
+          </Button>
         ))}
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>

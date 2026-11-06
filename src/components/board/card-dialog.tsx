@@ -3,12 +3,16 @@
 import { Trash2, X } from "lucide-react";
 import { useState } from "react";
 import type * as Y from "yjs";
+import { DatePicker } from "@/components/date-picker";
 import { MemberAvatar } from "@/components/member-avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Toggle } from "@/components/ui/toggle";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   checklistItem,
   deleteCard,
@@ -58,7 +62,7 @@ function CardDetail({ doc, card, columnTitle, members, me, canEdit, onClose, onD
         <label htmlFor="card-title" className="sr-only">
           Card title
         </label>
-        <input
+        <Input
           id="card-title"
           defaultValue={card.title}
           readOnly={!canEdit}
@@ -68,7 +72,7 @@ function CardDetail({ doc, card, columnTitle, members, me, canEdit, onClose, onD
             if (title && title !== card.title) set({ title });
           }}
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-          className="mr-8 rounded-md bg-transparent text-2xl font-bold tracking-tight outline-none focus-visible:bg-zinc-50"
+          className="mr-8 h-auto w-auto border-transparent bg-transparent px-1 py-0.5 text-2xl font-bold tracking-tight shadow-none hover:border-input focus-visible:border-ring md:text-2xl"
         />
       </div>
 
@@ -106,35 +110,38 @@ function CardDetail({ doc, card, columnTitle, members, me, canEdit, onClose, onD
             <ul className="flex flex-col gap-1">
               {card.checklist.map((item) => (
                 <li key={item.id} className="group flex items-center gap-2.5 rounded-md px-1 hover:bg-zinc-50">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id={`chk-${item.id}`}
                     checked={item.done}
                     disabled={!canEdit}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       set({
                         checklist: card.checklist.map((i) =>
-                          i.id === item.id ? { ...i, done: e.currentTarget.checked } : i,
+                          i.id === item.id ? { ...i, done: checked === true } : i,
                         ),
                       })
                     }
-                    className="size-4 accent-[var(--brand)]"
                   />
-                  <label
+                  <Label
                     htmlFor={`chk-${item.id}`}
-                    className={cn("flex-1 py-1.5 text-sm", item.done && "text-muted-foreground line-through")}
+                    className={cn(
+                      "flex-1 py-2 font-normal leading-snug",
+                      item.done && "text-muted-foreground line-through",
+                    )}
                   >
                     {item.text}
-                  </label>
+                  </Label>
                   {canEdit && (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label={`Remove “${item.text}”`}
                       onClick={() => set({ checklist: card.checklist.filter((i) => i.id !== item.id) })}
-                      className="grid size-7 place-items-center rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-zinc-200 focus-visible:opacity-100"
+                      className="size-7 text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                     >
                       <X className="size-3.5" />
-                    </button>
+                    </Button>
                   )}
                 </li>
               ))}
@@ -173,20 +180,17 @@ function CardDetail({ doc, card, columnTitle, members, me, canEdit, onClose, onD
                 const users = card.reactions[emoji] ?? [];
                 const mine = users.includes(me.id);
                 return (
-                  <button
+                  <Toggle
                     key={emoji}
-                    type="button"
-                    aria-pressed={mine}
+                    variant="outline"
+                    pressed={mine}
                     aria-label={`React ${emoji}`}
-                    onClick={() => toggleReaction(doc, card.id, emoji, me.id)}
-                    className={cn(
-                      "flex h-9 items-center gap-1 rounded-full border px-3 text-sm hover:bg-zinc-50",
-                      mine && "border-brand bg-brand-soft",
-                    )}
+                    onPressedChange={() => toggleReaction(doc, card.id, emoji, me.id)}
+                    className="rounded-full px-3"
                   >
                     {emoji}
                     {users.length > 0 && <span className="text-xs">{users.length}</span>}
-                  </button>
+                  </Toggle>
                 );
               })}
             </div>
@@ -200,67 +204,53 @@ function CardDetail({ doc, card, columnTitle, members, me, canEdit, onClose, onD
               {members.map((m) => {
                 const on = card.assignees.includes(m.id);
                 return (
-                  <button
+                  <Toggle
                     key={m.id}
-                    type="button"
                     disabled={!canEdit}
-                    aria-pressed={on}
-                    onClick={() =>
-                      set({ assignees: on ? card.assignees.filter((id) => id !== m.id) : [...card.assignees, m.id] })
+                    pressed={on}
+                    onPressedChange={(pressed) =>
+                      set({
+                        assignees: pressed ? [...card.assignees, m.id] : card.assignees.filter((id) => id !== m.id),
+                      })
                     }
-                    className={cn(
-                      "flex min-h-9 items-center gap-2 rounded-md px-2 text-left hover:bg-zinc-100 disabled:hover:bg-transparent",
-                      on && "bg-brand-soft hover:bg-brand-soft",
-                    )}
+                    className="h-auto min-h-9 justify-start px-2 font-normal text-foreground hover:text-foreground"
                   >
                     <MemberAvatar name={m.name} color={m.color} className="size-6" />
-                    <span className="flex-1 truncate">{m.id === me.id ? `${m.name} (you)` : m.name}</span>
+                    <span className="flex-1 truncate text-left">{m.id === me.id ? `${m.name} (you)` : m.name}</span>
                     {on && <span className="text-xs text-brand-strong">Assigned</span>}
-                  </button>
+                  </Toggle>
                 );
               })}
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="font-medium">Label</span>
-            <div className="flex flex-wrap gap-1.5">
+            <span className="text-sm font-medium">Label</span>
+            <ToggleGroup
+              type="single"
+              size="sm"
+              disabled={!canEdit}
+              value={card.label ?? ""}
+              onValueChange={(value) => set({ label: (value || null) as LabelKey | null })}
+              aria-label="Label"
+            >
               {(Object.keys(LABELS) as LabelKey[]).map((key) => (
-                <button
+                <ToggleGroupItem
                   key={key}
-                  type="button"
-                  disabled={!canEdit}
-                  aria-pressed={card.label === key}
-                  onClick={() => set({ label: card.label === key ? null : key })}
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs font-medium ring-offset-1",
-                    card.label === key && "ring-2 ring-foreground",
-                  )}
+                  value={key}
+                  aria-label={LABELS[key].name}
+                  className="h-7 px-2 text-xs data-[state=on]:ring-2 data-[state=on]:ring-foreground data-[state=on]:ring-offset-1"
                   style={{ background: LABELS[key].bg, color: LABELS[key].text }}
                 >
                   {LABELS[key].name}
-                </button>
+                </ToggleGroupItem>
               ))}
-            </div>
+            </ToggleGroup>
           </div>
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="card-due">Due date</Label>
-            <div className="flex gap-2">
-              <Input
-                id="card-due"
-                type="date"
-                value={card.due ?? ""}
-                disabled={!canEdit}
-                onChange={(e) => set({ due: e.target.value || null })}
-                className="h-9 text-sm"
-              />
-              {card.due && canEdit && (
-                <Button type="button" variant="ghost" size="sm" className="h-9" onClick={() => set({ due: null })}>
-                  Clear
-                </Button>
-              )}
-            </div>
+            <DatePicker id="card-due" value={card.due} disabled={!canEdit} onChange={(due) => set({ due })} />
           </div>
 
           <p className="mt-auto text-xs leading-relaxed text-muted-foreground">

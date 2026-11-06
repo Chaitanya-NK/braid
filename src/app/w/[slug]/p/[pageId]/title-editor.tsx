@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import { renamePage } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +43,7 @@ export function TitleEditor({
       <label htmlFor="page-title" className="sr-only">
         Page title
       </label>
-      <input
+      <Input
         id="page-title"
         value={title}
         maxLength={120}
@@ -56,8 +57,8 @@ export function TitleEditor({
           }
         }}
         className={cn(
-          "w-full rounded-lg bg-transparent font-bold tracking-tight outline-none placeholder:text-zinc-300 focus-visible:bg-zinc-50",
-          size === "lg" ? "text-4xl" : "text-2xl",
+          "h-auto border-transparent bg-transparent px-1 py-0.5 font-bold tracking-tight shadow-none placeholder:text-zinc-300 hover:border-input",
+          size === "lg" ? "text-4xl md:text-4xl" : "text-2xl md:text-2xl",
         )}
         placeholder="Untitled"
       />

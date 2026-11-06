@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,12 +24,17 @@ export function WorkspaceSwitcher({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="mb-2 flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2 text-left font-semibold outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent">
-        <span className="grid size-7 shrink-0 place-items-center rounded-md bg-brand text-xs text-white">
-          {initials(current.name)}
-        </span>
-        <span className="flex-1 truncate">{current.name}</span>
-        <ChevronsUpDown className="size-4 text-muted-foreground" aria-hidden="true" />
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="mb-2 h-11 w-full justify-start gap-2.5 px-2 text-left font-semibold data-[state=open]:bg-accent"
+        >
+          <span className="grid size-7 shrink-0 place-items-center rounded-md bg-brand text-xs text-white">
+            {initials(current.name)}
+          </span>
+          <span className="flex-1 truncate">{current.name}</span>
+          <ChevronsUpDown className="text-muted-foreground" aria-hidden="true" />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width) min-w-56">
         <DropdownMenuLabel className="text-xs text-muted-foreground">Workspaces</DropdownMenuLabel>

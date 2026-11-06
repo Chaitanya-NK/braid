@@ -20,7 +20,9 @@ import { Presence, SyncBadge, useConnectionToasts } from "@/components/collab/st
 import { useCollab, useSyncState, type Collab } from "@/components/collab/use-collab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Toggle } from "@/components/ui/toggle";
 import {
   addCard,
   addColumn,
@@ -34,7 +36,6 @@ import {
   type Card,
   type Label,
 } from "@/lib/board-model";
-import { cn } from "@/lib/utils";
 import { BoardColumn } from "./board-column";
 import { CardDialog } from "./card-dialog";
 import { CardFace, type Member } from "./card-tile";
@@ -148,33 +149,29 @@ function LiveBoard({ collab, me, members, readOnly }: Omit<Props, "pageId"> & { 
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-card px-6 py-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            aria-pressed={onlyMine}
-            onClick={() => setOnlyMine((v) => !v)}
-            className={cn(
-              "h-8 rounded-full border px-3 text-sm hover:bg-accent",
-              onlyMine && "border-brand bg-brand-soft text-brand-strong hover:bg-brand-soft",
-            )}
+          <Toggle
+            variant="outline"
+            size="sm"
+            pressed={onlyMine}
+            onPressedChange={setOnlyMine}
+            className="rounded-full px-3"
           >
             Assigned to me
-          </button>
-          <label htmlFor="label-filter" className="sr-only">
-            Filter by label
-          </label>
-          <select
-            id="label-filter"
-            value={labelFilter}
-            onChange={(e) => setLabelFilter(e.target.value as Label | "all")}
-            className="h-8 rounded-full border bg-card px-3 text-sm"
-          >
-            <option value="all">All labels</option>
-            {(Object.keys(LABELS) as Label[]).map((key) => (
-              <option key={key} value={key}>
-                {LABELS[key].name}
-              </option>
-            ))}
-          </select>
+          </Toggle>
+          <Select value={labelFilter} onValueChange={(v) => setLabelFilter(v as Label | "all")}>
+            <SelectTrigger size="sm" aria-label="Filter by label" className="rounded-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All labels</SelectItem>
+              {(Object.keys(LABELS) as Label[]).map((key) => (
+                <SelectItem key={key} value={key}>
+                  <span className="size-2.5 rounded-full" style={{ background: LABELS[key].text }} aria-hidden="true" />
+                  {LABELS[key].name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {filtering && <span className="text-xs text-muted-foreground">Dragging is paused while filtering</span>}
           {readOnly && (
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -185,7 +182,7 @@ function LiveBoard({ collab, me, members, readOnly }: Omit<Props, "pageId"> & { 
         <div className="flex items-center gap-3">
           <span className="hidden items-center gap-1 text-xs text-muted-foreground lg:flex">
             <MessageSquare className="size-3.5" aria-hidden="true" /> Press{" "}
-            <kbd className="rounded border bg-zinc-50 px-1 font-mono">/</kbd> to chat
+            <kbd className="rounded border bg-muted px-1 font-mono">/</kbd> to chat
           </span>
           <Presence peers={peers} />
           <SyncBadge state={sync} />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { MemberAvatar } from "@/components/member-avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,16 +40,19 @@ export function UserMenu({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="Account menu"
-        className="flex min-h-12 w-full items-center gap-2.5 rounded-lg px-1.5 text-left outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent"
-      >
-        <MemberAvatar name={name} color={color} />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium">{name}</span>
-          <span className="block truncate text-xs text-muted-foreground">{email}</span>
-        </span>
-        <ChevronsUpDown className="size-4 text-muted-foreground" aria-hidden="true" />
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          aria-label="Account menu"
+          className="h-12 w-full justify-start gap-2.5 px-1.5 text-left font-normal data-[state=open]:bg-accent"
+        >
+          <MemberAvatar name={name} color={color} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium">{name}</span>
+            <span className="block truncate text-xs text-muted-foreground">{email}</span>
+          </span>
+          <ChevronsUpDown className="text-muted-foreground" aria-hidden="true" />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-(--radix-dropdown-menu-trigger-width) min-w-56">
         <DropdownMenuLabel className="truncate text-xs font-normal text-muted-foreground">

@@ -2,6 +2,7 @@
 
 import type { HocuspocusProvider } from "@hocuspocus/provider";
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { Input } from "@/components/ui/input";
 import { setPresence, usePeerPointers } from "./use-board";
 
 /**
@@ -124,7 +125,7 @@ export function LivePointers({
           <label htmlFor="cursor-chat" className="sr-only">
             Message shown next to your pointer
           </label>
-          <input
+          <Input
             id="cursor-chat"
             autoFocus
             value={chat}
@@ -136,7 +137,7 @@ export function LivePointers({
               if (e.key === "Enter") closeChat(chat.trim() ? 4000 : 0);
             }}
             onBlur={() => closeChat(chat.trim() ? 4000 : 0)}
-            className="h-8 w-56 rounded-lg rounded-tl-sm px-2.5 text-[13px] text-white shadow-md outline-none placeholder:text-white/70"
+            className="h-8 w-56 rounded-lg rounded-tl-sm border-transparent px-2.5 text-[13px] text-white shadow-md placeholder:text-white/70 focus-visible:border-transparent focus-visible:ring-white/40"
             style={{ background: me.color }}
           />
         </div>

@@ -20,7 +20,9 @@ import {
   Undo2,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Tool = {
   label: string;
@@ -67,32 +69,49 @@ export function Toolbar({ editor }: { editor: Editor }) {
 
   let index = 0;
   return (
-    <div role="toolbar" aria-label="Formatting" className="flex flex-wrap items-center gap-1">
-      {groups.map((group, g) => (
-        <div key={g} className="flex items-center gap-0.5 border-r pr-1 last:border-r-0">
-          {group.map((tool) => {
-            const isActive = active[index++];
-            const Icon = tool.icon;
-            return (
-              <button
-                key={tool.label}
-                type="button"
-                aria-label={tool.label}
-                title={tool.shortcut ? `${tool.label} (${tool.shortcut})` : tool.label}
-                aria-pressed={tool.active ? isActive : undefined}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => tool.run(editor)}
-                className={cn(
-                  "grid size-9 place-items-center rounded-md text-zinc-700 hover:bg-accent",
-                  isActive && "bg-brand-soft text-brand-strong",
-                )}
-              >
-                <Icon className="size-4" aria-hidden="true" />
-              </button>
-            );
-          })}
-        </div>
-      ))}
-    </div>
+    <TooltipProvider>
+      <div role="toolbar" aria-label="Formatting" className="flex flex-wrap items-center gap-1">
+        {groups.map((group, g) => (
+          <div key={g} className="flex items-center gap-0.5 border-r pr-1 last:border-r-0">
+            {group.map((tool) => {
+              const isActive = active[index++];
+              const Icon = tool.icon;
+              const tip = tool.shortcut ? `${tool.label} · ${tool.shortcut}` : tool.label;
+              return (
+                <Tooltip key={tool.label}>
+                  <TooltipTrigger asChild>
+                    {tool.active ? (
+                      <Toggle
+                        size="sm"
+                        aria-label={tool.label}
+                        pressed={isActive}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onPressedChange={() => tool.run(editor)}
+                        className="size-9 text-zinc-700"
+                      >
+                        <Icon aria-hidden="true" />
+                      </Toggle>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={tool.label}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => tool.run(editor)}
+                        className="text-zinc-700"
+                      >
+                        <Icon aria-hidden="true" />
+                      </Button>
+                    )}
+                  </TooltipTrigger>
+                  <TooltipContent>{tip}</TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </TooltipProvider>
   );
 }

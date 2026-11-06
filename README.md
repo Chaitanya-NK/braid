@@ -57,7 +57,7 @@ npm run dev
 ## Stack
 
 - **Next.js 16** (App Router, Cache Components, Server Actions) + **TypeScript** + **Tailwind CSS 4**
-- **shadcn/ui** components (Radix UI) in `src/components/ui`, themed to the Braid palette in `globals.css`
+- **shadcn/ui** for every control (button, input, select, date picker, checkbox, toggle, dialog, dropdown, tooltip…), themed to the Braid palette in `globals.css`
 - **Sonner** toast notifications
 - **Postgres 16** with **Drizzle ORM**
 - **Better Auth** for email and password sign-in

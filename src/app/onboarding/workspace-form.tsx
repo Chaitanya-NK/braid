@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { createWorkspace } from "@/lib/actions";
 import { slugify } from "@/lib/utils";
@@ -40,22 +41,22 @@ export function WorkspaceForm() {
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="ws-slug">Workspace URL</Label>
-        <div className="flex h-11 items-center overflow-hidden rounded-md border border-input bg-card shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30">
-          <span className="pl-3.5 font-mono text-sm text-muted-foreground">/w/</span>
-          <input
+        <InputGroup>
+          <InputGroupAddon className="font-mono font-normal">/w/</InputGroupAddon>
+          <InputGroupInput
             id="ws-slug"
             name="slug"
             required
             pattern="[a-z0-9\-]{3,40}"
             title="3–40 lowercase letters, numbers or dashes"
-            className="h-full min-w-0 flex-1 bg-transparent pr-3.5 pl-0.5 font-mono text-sm outline-none"
+            className="font-mono text-sm"
             value={slug}
             onChange={(e) => {
               setSlugEdited(true);
               setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"));
             }}
           />
-        </div>
+        </InputGroup>
       </div>
       <FormError message={state?.error} />
       <Button type="submit" variant="brand" size="lg" disabled={pending}>
