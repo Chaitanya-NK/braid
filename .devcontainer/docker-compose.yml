@@ -6,8 +6,8 @@ services:
     command: sleep infinity
     depends_on:
       - db
-    environment:
-      DATABASE_URL: postgres://braid:braid@db:5432/braid
+    # DATABASE_URL comes from .env, so you can point it at local Postgres
+    # or a hosted one (Supabase, Neon) without touching this file.
 
   db:
     image: postgres:16
