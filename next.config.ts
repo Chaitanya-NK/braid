@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   allowedDevOrigins: codespacesHosts,
   experimental: {
+    // Offline navigations and Server Actions wait and retry instead of failing,
+    // and the useOffline() hook reports connectivity (see OfflineBanner).
+    useOffline: true,
     serverActions: {
       allowedOrigins: actionOrigins,
     },

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { MemberAvatar } from "@/components/member-avatar";
 import { cn } from "@/lib/utils";
-import type { SyncState } from "./use-collab";
+import type { OfflineTracker, SyncState } from "./use-collab";
 
 /* Presence avatars, the saved/offline badge and connection toasts,
    shared by docs and boards. */
@@ -36,35 +36,52 @@ const syncLabel: Record<SyncState, { text: string; dot: string }> = {
   syncing: { text: "Syncing…", dot: "bg-amber-500" },
   saving: { text: "Saving…", dot: "bg-amber-500" },
   saved: { text: "Saved", dot: "bg-green-600" },
-  offline: { text: "Offline", dot: "bg-red-600" },
+  offline: { text: "Offline", dot: "bg-amber-500" },
 };
 
-export function SyncBadge({ state }: { state: SyncState }) {
+/** "Saved", "Saving…", or while offline "Offline · changes saved on this device". */
+export function SyncBadge({ state, pending = 0 }: { state: SyncState; pending?: number }) {
   const { text, dot } = syncLabel[state];
+  const label =
+    state === "offline"
+      ? pending > 0
+        ? "Offline · changes saved on this device"
+        : "Offline · up to date on this device"
+      : text;
   return (
     <span role="status" className="flex items-center gap-1.5 text-xs text-muted-foreground">
       <span className={cn("size-2 rounded-full", dot)} aria-hidden="true" />
-      {text}
+      {label}
     </span>
   );
 }
 
-/** Toast when the connection drops after being live, and when it comes back. */
-export function useConnectionToasts(state: SyncState) {
+/** Toast when the connection drops after being live, and when it's back (with what got synced). */
+export function useConnectionToasts(state: SyncState, tracker: OfflineTracker) {
   const wasLive = useRef(false);
   const lostShown = useRef(false);
   useEffect(() => {
-    if (state === "saved" || state === "saving") {
-      if (lostShown.current) toast.success("Back online", { id: "connection" });
+    if (state === "saved") {
+      if (lostShown.current) {
+        // Counts are per keystroke in Yjs, so describe what happened instead of counting.
+        const synced = tracker.pending > 0;
+        const merged = tracker.mergedFromOthers > 0;
+        toast.success("Back online", {
+          id: "connection",
+          description: synced
+            ? `Your offline edits are synced${merged ? " and merged with edits from others" : ""}.`
+            : "You're up to date.",
+        });
+        tracker.reset();
+      }
       wasLive.current = true;
       lostShown.current = false;
     } else if (state === "offline" && wasLive.current && !lostShown.current) {
       lostShown.current = true;
-      toast.warning("Connection lost", {
+      toast.warning("You're offline", {
         id: "connection",
-        description: "Keep this tab open. Your edits will sync when it reconnects.",
+        description: "Keep working. Changes are saved on this device and sync when you're back.",
       });
     }
-  }, [state]);
+  }, [state, tracker]);
 }
-

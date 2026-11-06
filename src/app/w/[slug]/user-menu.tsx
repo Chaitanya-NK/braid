@@ -14,19 +14,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
+import { clearLocalCopies } from "@/lib/local-store";
 
 export function UserMenu({
+  userId,
   name,
   email,
   color,
   settingsHref,
 }: {
+  userId: string;
   name: string;
   email: string;
   color: string;
   settingsHref: string;
 }) {
   async function signOut() {
+    // Remove this user's offline copies of docs and boards from the browser.
+    await clearLocalCopies(userId);
     const { error } = await authClient.signOut();
     if (error) {
       toast.error("Couldn't sign out", { description: error.message });

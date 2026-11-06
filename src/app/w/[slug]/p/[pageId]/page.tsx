@@ -76,7 +76,7 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
 
         {page.kind === "doc" ? (
           <div className="mt-4">
-            <DocEditor pageId={page.id} me={{ name: user.name, color }} readOnly={!canEdit} />
+            <DocEditor pageId={page.id} me={{ id: user.id, name: user.name, color }} readOnly={!canEdit} />
           </div>
         ) : (
           <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-card p-10 text-center">

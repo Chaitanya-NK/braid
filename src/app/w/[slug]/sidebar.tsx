@@ -66,7 +66,7 @@ export async function Sidebar({ params }: { params: Promise<{ slug: string }> })
       </form>
 
       <div className="mt-auto border-t pt-3">
-        <UserMenu name={user.name} email={user.email} color={color} settingsHref={`${base}/settings`} />
+        <UserMenu userId={user.id} name={user.name} email={user.email} color={color} settingsHref={`${base}/settings`} />
       </div>
     </aside>
   );

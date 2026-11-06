@@ -17,7 +17,7 @@ import { Eye, MessageSquare, Plus } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Presence, SyncBadge, useConnectionToasts } from "@/components/collab/status";
-import { useCollab, useSyncState, type Collab } from "@/components/collab/use-collab";
+import { useCollab, usePendingChanges, useSyncState, type Collab } from "@/components/collab/use-collab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,7 +46,7 @@ type Props = { pageId: string; me: Member; members: Member[]; readOnly: boolean 
 
 /** A live, multiplayer kanban board backed by a Yjs document. */
 export function BoardView({ pageId, ...rest }: Props) {
-  const collab = useCollab(pageId, () =>
+  const collab = useCollab(pageId, rest.me.id, () =>
     toast.error("Couldn't open this board", {
       description: "You may no longer have access, or your session expired. Try reloading.",
       id: "board-access",
@@ -57,12 +57,13 @@ export function BoardView({ pageId, ...rest }: Props) {
 }
 
 function LiveBoard({ collab, me, members, readOnly }: Omit<Props, "pageId"> & { collab: Collab }) {
-  const { doc, provider } = collab;
+  const { doc, provider, tracker } = collab;
   const board = useBoardSnapshot(doc);
   const sync = useSyncState(provider);
+  const pending = usePendingChanges(tracker);
   const peers = useBoardPeers(provider);
   const activity = useCardActivity(provider);
-  useConnectionToasts(sync);
+  useConnectionToasts(sync, tracker);
 
   const surfaceRef = useRef<HTMLDivElement>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
@@ -185,7 +186,7 @@ function LiveBoard({ collab, me, members, readOnly }: Omit<Props, "pageId"> & { 
             <kbd className="rounded border bg-muted px-1 font-mono">/</kbd> to chat
           </span>
           <Presence peers={peers} />
-          <SyncBadge state={sync} />
+          <SyncBadge state={sync} pending={pending} />
         </div>
       </div>
 

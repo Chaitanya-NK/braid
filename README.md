@@ -46,7 +46,7 @@ npm run dev
 - [x] **Phase 0 — Foundation:** accounts, workspaces, sidebar, create/rename/trash pages, Codespaces setup
 - [x] **Phase 1 — Live docs:** real-time editor with cursors and presence (Yjs, Tiptap, Hocuspocus)
 - [x] **Phase 2 — Live boards:** kanban with drag and drop, live pointers, cursor chat, card details, reactions
-- [ ] **Phase 3 — Offline-first:** keep working offline, merge on reconnect
+- [x] **Phase 3 — Offline-first:** keep working offline, local copies in the browser, merge on reconnect
 - [ ] **Phase 4 — Rewind:** version history and replay player
 - [ ] **Phase 5 — Branches:** fork a page, compare, merge
 - [ ] **Phase 6 — Collaboration:** invites, permissions, mentions, inbox, ⌘K search
@@ -103,6 +103,19 @@ drizzle/               SQL migrations
 A board is a Yjs document with two maps: `columns` and `cards`. Each card stores its column and a sortable position key ([fractional indexing](https://www.npmjs.com/package/fractional-indexing)) instead of living inside a list. Moving a card only changes those two fields, so if two people drag the same card at once, one move wins and the card is never duplicated. New boards get their starter columns from the sync server, so two people opening a board at the same moment can't both add them.
 
 Live pointers, cursor chat (press <kbd>/</kbd>) and "Ravi is editing" badges use Yjs *awareness*: short-lived state that's shared while you're connected and never saved.
+
+### Offline
+
+Every doc and board you open is also saved in your browser (IndexedDB, via `y-indexeddb`), under a name that includes your user id. So:
+
+- Pages open instantly from the local copy, then catch up with the server.
+- If you go offline, the app disconnects from the sync server straight away, keeps working, and shows **Offline · changes saved on this device**. Edits survive closing the tab.
+- When you're back, Yjs merges your edits with everyone else's. You get a **Back online** toast saying whether anything was merged.
+- Signing out deletes your local copies from that browser.
+
+Next.js's `experimental.useOffline` makes navigations and Server Actions wait and retry instead of failing, and powers the offline banner. Reloading the page while offline still needs the network; a service worker (Phase 9+) would remove that limit.
+
+To try it: open a doc, then in Chrome DevTools → Network, switch **No throttling** to **Offline**.
 
 ## License
 

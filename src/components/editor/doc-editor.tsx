@@ -11,13 +11,19 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toolbar } from "./toolbar";
 import { Presence, SyncBadge, useConnectionToasts } from "@/components/collab/status";
-import { useCollab, usePeers, useSyncState, type Collab } from "@/components/collab/use-collab";
+import {
+  useCollab,
+  usePeers,
+  usePendingChanges,
+  useSyncState,
+  type Collab,
+} from "@/components/collab/use-collab";
 
-type Me = { name: string; color: string };
+type Me = { id: string; name: string; color: string };
 
 /** A live, multiplayer doc. Content lives in Yjs and syncs through the sync server. */
 export function DocEditor({ pageId, me, readOnly }: { pageId: string; me: Me; readOnly: boolean }) {
-  const collab = useCollab(pageId, () =>
+  const collab = useCollab(pageId, me.id, () =>
     toast.error("Couldn't open this doc", {
       description: "You may no longer have access, or your session expired. Try reloading.",
       id: "doc-access",
@@ -28,10 +34,11 @@ export function DocEditor({ pageId, me, readOnly }: { pageId: string; me: Me; re
 }
 
 function LiveEditor({ collab, me, readOnly }: { collab: Collab; me: Me; readOnly: boolean }) {
-  const { doc, provider } = collab;
+  const { doc, provider, tracker } = collab;
   const sync = useSyncState(provider);
+  const pending = usePendingChanges(tracker);
   const peers = usePeers(provider);
-  useConnectionToasts(sync);
+  useConnectionToasts(sync, tracker);
 
   const editor = useEditor(
     {
@@ -41,7 +48,7 @@ function LiveEditor({ collab, me, readOnly }: { collab: Collab; me: Me; readOnly
         // Yjs has its own undo history, so turn off the built-in one.
         StarterKit.configure({ undoRedo: false, heading: { levels: [1, 2, 3] } }),
         Collaboration.configure({ document: doc }),
-        CollaborationCaret.configure({ provider, user: me }),
+        CollaborationCaret.configure({ provider, user: { name: me.name, color: me.color } }),
         TaskList,
         TaskItem.configure({ nested: true }),
         Placeholder.configure({
@@ -67,7 +74,7 @@ function LiveEditor({ collab, me, readOnly }: { collab: Collab; me: Me; readOnly
         )}
         <div className="flex items-center gap-3">
           <Presence peers={peers} />
-          <SyncBadge state={sync} />
+          <SyncBadge state={sync} pending={pending} />
         </div>
       </div>
       {editor ? <EditorContent editor={editor} /> : <EditorSkeleton />}
