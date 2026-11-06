@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { renamePage } from "@/lib/actions";
 
 /** Big editable page title. Saves on Enter or when the field loses focus. */
@@ -12,9 +13,19 @@ export function TitleEditor({ pageId, initialTitle }: { pageId: string; initialT
   function save() {
     const next = title.trim() || "Untitled";
     if (next === saved.current) return;
+    const previous = saved.current;
     saved.current = next;
     setTitle(next);
-    startTransition(() => renamePage(pageId, next));
+    startTransition(async () => {
+      const result = await renamePage(pageId, next);
+      if (!result.ok) {
+        saved.current = previous;
+        setTitle(previous);
+        toast.error("Couldn't rename the page", { description: result.error });
+        return;
+      }
+      toast.success("Page renamed", { description: next });
+    });
   }
 
   return (
@@ -35,10 +46,10 @@ export function TitleEditor({ pageId, initialTitle }: { pageId: string; initialT
             e.currentTarget.blur();
           }
         }}
-        className="w-full rounded-lg bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-zinc-300 focus-visible:bg-zinc-50 focus-visible:outline-none"
+        className="w-full rounded-lg bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-zinc-300 focus-visible:bg-zinc-50"
         placeholder="Untitled"
       />
-      <span aria-live="polite" className="shrink-0 text-xs text-muted">
+      <span aria-live="polite" className="shrink-0 text-xs text-muted-foreground">
         {pending ? "Saving…" : ""}
       </span>
     </div>

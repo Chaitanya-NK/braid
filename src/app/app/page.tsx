@@ -5,7 +5,7 @@ import { listMyWorkspaces, requireUser } from "@/lib/dal";
 /** /app sends you to your first workspace, or to onboarding if you have none. */
 export default function AppEntry() {
   return (
-    <Suspense fallback={<p className="p-10 text-muted">Opening your workspace…</p>}>
+    <Suspense fallback={<p className="p-10 text-muted-foreground">Opening your workspace…</p>}>
       <Dispatch />
     </Suspense>
   );

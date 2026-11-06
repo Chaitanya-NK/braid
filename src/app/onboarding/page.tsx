@@ -10,7 +10,7 @@ export default function OnboardingPage() {
         <Logo href="/app" />
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Create your workspace</h1>
-          <p className="mt-2 text-muted">Step 2 of 2 · a home for your team&apos;s boards and docs</p>
+          <p className="mt-2 text-muted-foreground">Step 2 of 2 · a home for your team&apos;s boards and docs</p>
         </div>
         <WorkspaceForm />
       </div>

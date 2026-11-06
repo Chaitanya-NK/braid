@@ -7,14 +7,14 @@ export function LogoMark({ size = 28 }: { size?: number }) {
       <path
         d="M6 4c0 7 16 7 16 14s-16 3-16 6"
         fill="none"
-        stroke="var(--color-brand)"
+        stroke="var(--brand)"
         strokeWidth="3"
         strokeLinecap="round"
       />
       <path
         d="M22 4c0 7-16 7-16 14s16 3 16 6"
         fill="none"
-        stroke="var(--color-ink)"
+        stroke="var(--foreground)"
         strokeWidth="3"
         strokeLinecap="round"
       />

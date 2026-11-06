@@ -9,7 +9,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           {children}
         </div>
       </section>
-      <aside className="hidden flex-[1_1_480px] items-center justify-center bg-ink px-10 py-12 text-zinc-100 md:flex">
+      <aside className="hidden flex-[1_1_480px] items-center justify-center bg-primary px-10 py-12 text-zinc-100 md:flex">
         <div className="flex max-w-md flex-col gap-6">
           <h2 className="text-3xl font-semibold leading-tight tracking-tight">
             Work together, then rewind to any moment.

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { KIND_LABEL, PageIcon } from "@/components/page-icon";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createPage } from "@/lib/actions";
 import { listRecentPages, requireWorkspace } from "@/lib/dal";
 import { timeAgo } from "@/lib/utils";
-import { buttonClass } from "@/components/ui";
 
 export default function WorkspaceHome({ params }: PageProps<"/w/[slug]">) {
   return (
@@ -27,60 +29,60 @@ async function Home({ params }: { params: Promise<{ slug: string }> }) {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Hi, {firstName}</h1>
-          <p className="mt-1.5 text-muted">{workspace.name}</p>
+          <p className="mt-1.5 text-muted-foreground">{workspace.name}</p>
         </div>
         <form action={createPage} className="flex flex-wrap gap-2">
           <input type="hidden" name="workspaceId" value={workspace.id} />
-          <button type="submit" name="kind" value="doc" className={buttonClass("secondary")}>
+          <Button type="submit" name="kind" value="doc" variant="outline">
             New doc
-          </button>
-          <button type="submit" name="kind" value="canvas" className={buttonClass("secondary")}>
+          </Button>
+          <Button type="submit" name="kind" value="canvas" variant="outline">
             New canvas
-          </button>
-          <button type="submit" name="kind" value="board" className={buttonClass("primary")}>
+          </Button>
+          <Button type="submit" name="kind" value="board">
             New board
-          </button>
+          </Button>
         </form>
       </header>
 
       <section aria-labelledby="recent-h">
-        <h2 id="recent-h" className="mb-3 text-sm font-semibold text-muted">
+        <h2 id="recent-h" className="mb-3 text-sm font-semibold text-muted-foreground">
           Recently edited
         </h2>
         {recent.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-zinc-300 bg-surface p-8 text-center text-muted">
+          <p className="rounded-xl border border-dashed border-zinc-300 bg-card p-8 text-center text-muted-foreground">
             Nothing here yet. Create a doc or board to get started.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-line bg-surface">
-            <table className="w-full min-w-[560px] border-collapse text-sm">
-              <thead>
-                <tr className="text-left text-faint">
-                  <th className="px-5 py-3 font-medium">Name</th>
-                  <th className="px-5 py-3 font-medium">Type</th>
-                  <th className="px-5 py-3 font-medium">Created by</th>
-                  <th className="px-5 py-3 font-medium">Updated</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="rounded-xl border bg-card">
+            <Table className="min-w-[560px]">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Created by</TableHead>
+                  <TableHead>Updated</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {recent.map((p) => (
-                  <tr key={p.id} className="border-t border-zinc-100 hover:bg-zinc-50">
-                    <td className="px-5 py-3.5">
+                  <TableRow key={p.id}>
+                    <TableCell>
                       <Link
                         href={`/w/${workspace.slug}/p/${p.id}`}
                         className="flex items-center gap-2.5 font-medium hover:text-brand"
                       >
-                        <PageIcon kind={p.kind} className="size-4 text-muted" />
+                        <PageIcon kind={p.kind} className="size-4 text-muted-foreground" />
                         {p.title}
                       </Link>
-                    </td>
-                    <td className="px-5 py-3.5 text-muted">{KIND_LABEL[p.kind]}</td>
-                    <td className="px-5 py-3.5">{p.createdByName}</td>
-                    <td className="px-5 py-3.5 text-muted">{timeAgo(p.updatedAt)}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{KIND_LABEL[p.kind]}</TableCell>
+                    <TableCell>{p.createdByName}</TableCell>
+                    <TableCell className="text-muted-foreground">{timeAgo(p.updatedAt)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>
@@ -91,8 +93,8 @@ async function Home({ params }: { params: Promise<{ slug: string }> }) {
 function HomeSkeleton() {
   return (
     <div aria-busy="true" className="flex flex-col gap-8">
-      <div className="h-16 w-64 animate-pulse rounded-lg bg-zinc-200/60" />
-      <div className="h-64 animate-pulse rounded-xl bg-zinc-200/40" />
+      <Skeleton className="h-16 w-64" />
+      <Skeleton className="h-64 rounded-xl" />
     </div>
   );
 }

@@ -13,7 +13,7 @@ import { pickColor, slugify } from "@/lib/utils";
  * belong to the workspace — never trust ids coming from the browser.
  */
 
-export type FormState = { error?: string } | undefined;
+export type FormState = { error?: string; savedAt?: number } | undefined;
 
 /* ----------------------------- Workspaces ----------------------------- */
 
@@ -77,7 +77,7 @@ export async function renameWorkspace(_prev: FormState, formData: FormData): Pro
     .where(eq(schema.workspace.id, workspaceId))
     .returning({ slug: schema.workspace.slug });
   revalidatePath(`/w/${ws.slug}`, "layout");
-  return {};
+  return { savedAt: Date.now() };
 }
 
 /* -------------------------------- Pages -------------------------------- */
@@ -109,6 +109,9 @@ export async function createPage(formData: FormData) {
   redirect(`/w/${workspace.slug}/p/${created.id}`);
 }
 
+/** Result returned to the browser, so the UI can show a toast. */
+export type ActionResult = { ok: true; slug: string } | { ok: false; error: string };
+
 /** Finds a page and checks the caller is a member of its workspace. */
 async function requirePageAccess(pageId: string) {
   const user = await requireUser();
@@ -125,44 +128,46 @@ async function requirePageAccess(pageId: string) {
     )
     .where(eq(schema.page.id, pageId))
     .limit(1);
-  if (!row) throw new Error("Page not found");
-  if (row.role === "guest") throw new Error("Guests can't change pages");
+  if (!row) return { error: "That page no longer exists" } as const;
+  if (row.role === "guest") return { error: "Guests can't change pages" } as const;
   return row;
 }
 
-export async function renamePage(pageId: string, title: string) {
-  const { slug } = await requirePageAccess(pageId);
+export async function renamePage(pageId: string, title: string): Promise<ActionResult> {
+  const access = await requirePageAccess(pageId);
+  if ("error" in access) return { ok: false, error: access.error };
   const clean = title.trim().slice(0, 120) || "Untitled";
   await db
     .update(schema.page)
     .set({ title: clean, updatedAt: new Date() })
     .where(eq(schema.page.id, pageId));
-  revalidatePath(`/w/${slug}`, "layout");
+  revalidatePath(`/w/${access.slug}`, "layout");
+  return { ok: true, slug: access.slug };
 }
 
-export async function archivePage(formData: FormData) {
-  const { slug } = await requirePageAccess(String(formData.get("pageId") ?? ""));
-  await db
-    .update(schema.page)
-    .set({ archivedAt: new Date() })
-    .where(eq(schema.page.id, String(formData.get("pageId"))));
-  revalidatePath(`/w/${slug}`, "layout");
-  redirect(`/w/${slug}`);
+export async function archivePage(pageId: string): Promise<ActionResult> {
+  const access = await requirePageAccess(pageId);
+  if ("error" in access) return { ok: false, error: access.error };
+  await db.update(schema.page).set({ archivedAt: new Date() }).where(eq(schema.page.id, pageId));
+  revalidatePath(`/w/${access.slug}`, "layout");
+  return { ok: true, slug: access.slug };
 }
 
-export async function restorePage(formData: FormData) {
-  const pageId = String(formData.get("pageId") ?? "");
-  const { slug } = await requirePageAccess(pageId);
+export async function restorePage(pageId: string): Promise<ActionResult> {
+  const access = await requirePageAccess(pageId);
+  if ("error" in access) return { ok: false, error: access.error };
   await db.update(schema.page).set({ archivedAt: null }).where(eq(schema.page.id, pageId));
-  revalidatePath(`/w/${slug}`, "layout");
+  revalidatePath(`/w/${access.slug}`, "layout");
+  return { ok: true, slug: access.slug };
 }
 
-export async function deletePageForever(formData: FormData) {
-  const pageId = String(formData.get("pageId") ?? "");
-  const { page, slug } = await requirePageAccess(pageId);
-  if (!page.archivedAt) throw new Error("Move the page to Trash first");
+export async function deletePageForever(pageId: string): Promise<ActionResult> {
+  const access = await requirePageAccess(pageId);
+  if ("error" in access) return { ok: false, error: access.error };
+  if (!access.page.archivedAt) return { ok: false, error: "Move the page to Trash first" };
   await db
     .delete(schema.page)
     .where(and(eq(schema.page.id, pageId), isNotNull(schema.page.archivedAt)));
-  revalidatePath(`/w/${slug}`, "layout");
+  revalidatePath(`/w/${access.slug}`, "layout");
+  return { ok: true, slug: access.slug };
 }

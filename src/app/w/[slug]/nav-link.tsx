@@ -21,7 +21,7 @@ export function NavLink({
       aria-current={active ? "page" : undefined}
       className={cn(
         "flex min-h-9 items-center gap-2.5 rounded-lg px-2.5",
-        active ? "bg-brand-soft font-medium text-brand-strong" : "text-ink-2 hover:bg-zinc-100",
+        active ? "bg-brand-soft font-medium text-brand-strong" : "text-zinc-700 hover:bg-accent",
       )}
     >
       {children}
