@@ -42,7 +42,9 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const isSignUp = mode === "sign-up";
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    // method="post" keeps the password out of the URL if someone submits
+    // before the page's JavaScript has loaded.
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       {isSignUp && (
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="name">Your name</Label>
