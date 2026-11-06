@@ -3,9 +3,18 @@
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { renamePage } from "@/lib/actions";
+import { cn } from "@/lib/utils";
 
 /** Big editable page title. Saves on Enter or when the field loses focus. */
-export function TitleEditor({ pageId, initialTitle }: { pageId: string; initialTitle: string }) {
+export function TitleEditor({
+  pageId,
+  initialTitle,
+  size = "lg",
+}: {
+  pageId: string;
+  initialTitle: string;
+  size?: "md" | "lg";
+}) {
   const [title, setTitle] = useState(initialTitle);
   const saved = useRef(initialTitle);
   const [pending, startTransition] = useTransition();
@@ -46,7 +55,10 @@ export function TitleEditor({ pageId, initialTitle }: { pageId: string; initialT
             e.currentTarget.blur();
           }
         }}
-        className="w-full rounded-lg bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-zinc-300 focus-visible:bg-zinc-50"
+        className={cn(
+          "w-full rounded-lg bg-transparent font-bold tracking-tight outline-none placeholder:text-zinc-300 focus-visible:bg-zinc-50",
+          size === "lg" ? "text-4xl" : "text-2xl",
+        )}
         placeholder="Untitled"
       />
       <span aria-live="polite" className="shrink-0 text-xs text-muted-foreground">

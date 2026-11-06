@@ -45,7 +45,7 @@ npm run dev
 
 - [x] **Phase 0 — Foundation:** accounts, workspaces, sidebar, create/rename/trash pages, Codespaces setup
 - [x] **Phase 1 — Live docs:** real-time editor with cursors and presence (Yjs, Tiptap, Hocuspocus)
-- [ ] **Phase 2 — Live boards:** kanban with drag and drop, cursor chat, reactions
+- [x] **Phase 2 — Live boards:** kanban with drag and drop, live pointers, cursor chat, card details, reactions
 - [ ] **Phase 3 — Offline-first:** keep working offline, merge on reconnect
 - [ ] **Phase 4 — Rewind:** version history and replay player
 - [ ] **Phase 5 — Branches:** fork a page, compare, merge
@@ -79,7 +79,10 @@ src/
     auth.ts            Better Auth server config
     dal.ts             data access layer: every read checks who's asking
     actions.ts         Server Actions: every write re-checks permissions
-  components/editor/   the live doc editor, toolbar and presence
+  components/collab/   shared live-sync hooks, presence avatars and status badge
+  components/editor/   the live doc editor and toolbar
+  components/board/    the live kanban board, card dialog and live pointers
+  lib/board-model.ts   how a board is stored in Yjs (columns, cards, ordering)
   lib/sync-token.ts    signed tickets that let a browser open one page on the sync server
   proxy.ts             redirects signed-out visitors before rendering
 server/
@@ -94,6 +97,12 @@ drizzle/               SQL migrations
 2. The browser opens a WebSocket to the sync server with that ticket. The server checks the signature and that it's for this page, then loads the doc from Postgres.
 3. Every keystroke is a small Yjs update sent to the server and on to everyone else in the doc. Yjs merges simultaneous edits without conflicts.
 4. The server saves the doc to Postgres about a second after people stop typing.
+
+### Boards
+
+A board is a Yjs document with two maps: `columns` and `cards`. Each card stores its column and a sortable position key ([fractional indexing](https://www.npmjs.com/package/fractional-indexing)) instead of living inside a list. Moving a card only changes those two fields, so if two people drag the same card at once, one move wins and the card is never duplicated. New boards get their starter columns from the sync server, so two people opening a board at the same moment can't both add them.
+
+Live pointers, cursor chat (press <kbd>/</kbd>) and "Ravi is editing" badges use Yjs *awareness*: short-lived state that's shared while you're connected and never saved.
 
 ## License
 

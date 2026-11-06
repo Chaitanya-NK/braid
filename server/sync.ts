@@ -11,6 +11,7 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../src/db/schema";
+import { seedBoard } from "../src/lib/board-model";
 import { docName, verifySyncToken, type SyncClaims } from "../src/lib/sync-token";
 
 try {
@@ -45,6 +46,20 @@ const server = new Server<{ user: SyncClaims }>({
     if (documentName !== docName(claims.pageId)) throw new Error("Token is for a different page");
     connectionConfig.readOnly = claims.readOnly;
     return { user: claims };
+  },
+
+  // A board opened for the first time gets its starter columns, here on the
+  // server, so two people opening it at once can't both add them.
+  async afterLoadDocument({ document, documentName }) {
+    const pageId = pageIdOf(documentName);
+    const [row] = await db
+      .select({ kind: schema.page.kind })
+      .from(schema.page)
+      .where(eq(schema.page.id, pageId))
+      .limit(1);
+    if (row?.kind === "board" && seedBoard(document)) {
+      console.log(`Seeded new board ${pageId}`);
+    }
   },
 
   extensions: [
