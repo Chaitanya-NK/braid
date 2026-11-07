@@ -5,6 +5,7 @@ import { BoardView } from "@/components/board/board-view";
 import { BranchMenuActions, BranchStatusWatcher, ReopenBranchButton } from "@/components/branch/branch-controls";
 import { BranchStatusBadge } from "@/components/branch/status-badge";
 import { DocEditor } from "@/components/editor/doc-editor";
+import { CanvasView } from "@/components/canvas/canvas-view";
 import { PageIcon } from "@/components/page-icon";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -99,6 +100,17 @@ async function BranchContent({ params }: { params: Promise<{ slug: string; pageI
     );
 
   const watcher = branch.status === "open" ? <BranchStatusWatcher branchId={branch.id} /> : null;
+
+  if (page.kind === "canvas") {
+    return (
+      <div className="flex h-dvh flex-col">
+        {header}
+        {watcher}
+        <div className="flex flex-col gap-3 border-b bg-card px-6 py-3">{banner}</div>
+        <CanvasView pageId={page.id} branchId={branch.id} me={me} readOnly={!canEdit} />
+      </div>
+    );
+  }
 
   if (page.kind === "board") {
     return (

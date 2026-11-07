@@ -13,12 +13,14 @@ import { Button } from "@/components/ui/button";
  *
  * Where you're looking is described in a way that works across screen sizes:
  * for docs, which block is at the top and how far into it; for boards, how
- * far across the board you've scrolled, and which card is open.
+ * far across the board you've scrolled, and which card is open; for
+ * canvases, the point in the middle of your screen and your zoom.
  */
 
 export type View =
   | { kind: "doc"; block: number; offset: number }
-  | { kind: "board"; x: number; y: number; card: string | null };
+  | { kind: "board"; x: number; y: number; card: string | null }
+  | { kind: "canvas"; x: number; y: number; zoom: number };
 
 export type Leader = { clientId: number; name: string; color: string };
 
@@ -93,13 +95,13 @@ export function useFollow(provider: HocuspocusProvider, apply: (view: View) => v
     };
     // Starting to follow was itself a click: listen from the next tick.
     const id = setTimeout(() => {
-      for (const name of ["wheel", "touchstart", "mousedown", "keydown"]) {
+      for (const name of ["wheel", "touchstart", "pointerdown", "mousedown", "keydown"]) {
         window.addEventListener(name, takeOver, { capture: true, passive: true });
       }
     }, 0);
     return () => {
       clearTimeout(id);
-      for (const name of ["wheel", "touchstart", "mousedown", "keydown"]) {
+      for (const name of ["wheel", "touchstart", "pointerdown", "mousedown", "keydown"]) {
         window.removeEventListener(name, takeOver, { capture: true });
       }
     };

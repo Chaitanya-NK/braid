@@ -8,6 +8,8 @@ import { useMemo } from "react";
 import type * as Y from "yjs";
 import { CardFace, type Member } from "@/components/board/card-tile";
 import { readBoard } from "@/lib/board-model";
+import { readCanvas } from "@/lib/canvas-model";
+import { StaticCanvas } from "@/components/canvas/canvas-scene";
 import { mentionDisplay } from "@/components/editor/mention";
 
 /** A read-only doc bound to the replay document; re-renders as steps apply. */
@@ -53,4 +55,11 @@ export function ReplayBoard({ doc, version, members }: { doc: Y.Doc; version: nu
       ))}
     </div>
   );
+}
+
+/** A canvas as it was at this moment. `version` forces a re-read after each step. */
+export function ReplayCanvas({ doc, version }: { doc: Y.Doc; version: number }) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const shapes = useMemo(() => readCanvas(doc), [doc, version]);
+  return <StaticCanvas shapes={shapes} />;
 }

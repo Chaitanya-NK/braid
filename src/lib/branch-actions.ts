@@ -57,7 +57,6 @@ export async function createBranch(pageId: string, name: string): Promise<Branch
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const access = await pageAccess(pageId);
   if (!access.ok) return { ok: false, error: access.error };
-  if (access.page.kind === "canvas") return { ok: false, error: "Canvases can't be branched yet" };
   const [branch] = await db
     .insert(schema.pageBranch)
     .values({ pageId, name: parsed.data, createdBy: access.user.id })

@@ -1,4 +1,6 @@
-import { House, Inbox, Plus, Settings, Trash2 } from "lucide-react";
+import { House, Inbox, Plus, Settings, Sparkles, Trash2 } from "lucide-react";
+import { CatchUpBadge } from "@/components/catch-up/catch-up-client";
+import { catchUpList } from "@/lib/catch-up";
 import { UnreadBadge } from "@/components/inbox/unread-badge";
 import { CommandPalette, SearchButton } from "@/components/command-palette";
 import { canManageMembers } from "@/lib/permissions";
@@ -18,10 +20,11 @@ const asideClass =
 export async function Sidebar({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const { user, workspace, color, role } = await requireWorkspace(slug);
-  const [pages, workspaces, inbox] = await Promise.all([
+  const [pages, workspaces, inbox, changed] = await Promise.all([
     listPages(workspace.id),
     listMyWorkspaces(user.id),
     getInboxStatus(workspace.id),
+    catchUpList(user.id, workspace.id),
   ]);
   const base = `/w/${workspace.slug}`;
 
@@ -44,6 +47,10 @@ export async function Sidebar({ params }: { params: Promise<{ slug: string }> })
         <NavLink href={`${base}/inbox`}>
           <Inbox className="size-4" aria-hidden="true" /> Inbox
           <UnreadBadge workspaceId={workspace.id} initial={inbox.unread} />
+        </NavLink>
+        <NavLink href={`${base}/catch-up`}>
+          <Sparkles className="size-4" aria-hidden="true" /> Catch up
+          <CatchUpBadge pageIds={changed.map((c) => c.pageId)} />
         </NavLink>
         <NavLink href={`${base}/trash`}>
           <Trash2 className="size-4" aria-hidden="true" /> Trash

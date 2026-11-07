@@ -29,11 +29,11 @@ import { getPageHistory } from "@/lib/history-actions";
 import { chaptersOf, decodeHistory, Replayer, restoreInto, type Step } from "@/lib/rewind";
 import { cn } from "@/lib/utils";
 import type { Member } from "@/components/board/card-tile";
-import { ReplayBoard, ReplayDoc } from "./replay-views";
+import { ReplayBoard, ReplayCanvas, ReplayDoc } from "./replay-views";
 
 type Props = {
   pageId: string;
-  kind: "doc" | "board";
+  kind: "doc" | "board" | "canvas";
   me: Member;
   members: Member[];
   canRestore: boolean;
@@ -247,8 +247,10 @@ function Player({ pageId, kind, me, members, canRestore, backHref, initialStepId
           >
             {kind === "doc" ? (
               <ReplayDoc key={docGen} doc={doc} />
-            ) : (
+            ) : kind === "board" ? (
               <ReplayBoard key={docGen} doc={doc} version={version} members={members} />
+            ) : (
+              <ReplayCanvas key={docGen} doc={doc} version={version} />
             )}
           </div>
         </div>

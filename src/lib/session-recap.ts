@@ -3,6 +3,7 @@ import { and, asc, eq, lte } from "drizzle-orm";
 import * as Y from "yjs";
 import { db, schema } from "@/db";
 import { diffBoards, diffDocs, type BoardChange, type DiffRow } from "@/lib/branch-diff";
+import { diffCanvases } from "@/lib/canvas-model";
 
 /**
  * A session's recap, worked out from the page's Rewind history: the page
@@ -21,7 +22,12 @@ export type Recap = {
 /** History rows are written up to ~5s after the edit, so look a little past the end. */
 export const FLUSH_GRACE_MS = 6000;
 
-export async function buildRecap(pageId: string, kind: "doc" | "board", startedAt: Date, endedAt: Date): Promise<Recap> {
+export async function buildRecap(
+  pageId: string,
+  kind: "doc" | "board" | "canvas",
+  startedAt: Date,
+  endedAt: Date,
+): Promise<Recap> {
   const until = new Date(endedAt.getTime() + FLUSH_GRACE_MS);
   const rows = await db
     .select()
@@ -61,8 +67,9 @@ export async function buildRecap(pageId: string, kind: "doc" | "board", startedA
     const diff = diffDocs(before, after, 1);
     recap.doc = { ...diff, rows: diff.rows.slice(0, 80) };
   } else {
+    // Boards and canvases are both shown as a list of changes ("board" is that list).
     // Only which fields changed is shown, so member names aren't needed here.
-    recap.board = diffBoards(before, after, []);
+    recap.board = kind === "board" ? diffBoards(before, after, []) : diffCanvases(before, after);
   }
   return recap;
 }
@@ -76,7 +83,7 @@ export async function buildRecap(pageId: string, kind: "doc" | "board", startedA
 export async function settleSession(
   session: { id: string; endedAt: Date | null; endsAt: Date; startedAt: Date; recap: unknown },
   pageId: string,
-  kind: "doc" | "board",
+  kind: "doc" | "board" | "canvas",
 ) {
   const now = Date.now();
   let endedAt = session.endedAt;
@@ -90,4 +97,15 @@ export async function settleSession(
     await db.update(schema.workSession).set({ recap }).where(eq(schema.workSession.id, session.id));
   }
   return { endedAt, recap };
+}
+
+/**
+ * Catch-up: the page now compared with how it was at `since` (default: a
+ * day ago). `since` comes from the URL, so it's clamped to the last 90 days.
+ */
+export async function buildChangesSince(pageId: string, kind: "doc" | "board" | "canvas", since: Date | null) {
+  const now = Date.now();
+  const from = new Date(Math.min(now, Math.max(now - 90 * 86_400_000, since?.getTime() ?? now - 86_400_000)));
+  const recap = await buildRecap(pageId, kind, from, new Date(now));
+  return { recap, since: from };
 }

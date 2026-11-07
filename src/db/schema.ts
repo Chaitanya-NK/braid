@@ -356,6 +356,24 @@ export const sessionParticipant = pgTable(
   (t) => [primaryKey({ columns: [t.sessionId, t.userId] })],
 );
 
+/**
+ * When someone last had a page open. Catch-up compares this with the page's
+ * Rewind history to show what others changed while they were away.
+ */
+export const pageVisit = pgTable(
+  "page_visit",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    pageId: uuid("page_id")
+      .notNull()
+      .references(() => page.id, { onDelete: "cascade" }),
+    lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.pageId] })],
+);
+
 export type Workspace = typeof workspace.$inferSelect;
 export type Page = typeof page.$inferSelect;
 export type PageKind = (typeof pageKind.enumValues)[number];

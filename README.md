@@ -52,7 +52,7 @@ npm run dev
 - [x] **Phase 6 — Collaboration:** invites, permissions, mentions, inbox, ⌘K search
 - [x] **Phase 7 — Sessions & automations:** timed live sessions with recaps, when-then board rules
 - [x] **Phase 8 — Huddles & follow mode:** drop-in voice/video/screen share on any page (WebRTC), follow a teammate's view
-- [ ] **Phase 9 — Canvas & Catch-up:** infinite canvas and "while you were away" digest
+- [x] **Phase 9 — Canvas & catch-up:** live whiteboard (stickies, shapes, text, arrows, pen) and "what changed while you were away"
 
 ## Stack
 
@@ -113,7 +113,7 @@ Every doc and board you open is also saved in your browser (IndexedDB, via `y-in
 - When you're back, Yjs merges your edits with everyone else's. You get a **Back online** toast saying whether anything was merged.
 - Signing out deletes your local copies from that browser.
 
-Next.js's `experimental.useOffline` makes navigations and Server Actions wait and retry instead of failing, and powers the offline banner. Reloading the page while offline still needs the network; a service worker (Phase 9+) would remove that limit.
+Next.js's `experimental.useOffline` makes navigations and Server Actions wait and retry instead of failing, and powers the offline banner. Reloading the page while offline still needs the network; a service worker would remove that limit.
 
 To try it: open a doc, then in Chrome DevTools → Network, switch **No throttling** to **Offline**.
 
@@ -177,6 +177,22 @@ Routes between networks are found with Google's free STUN server. There's no TUR
 ### Follow mode
 
 Click a teammate's avatar (next to "Saved") to follow them: your view follows theirs as they scroll, and on boards it opens the card they open. A frame in their colour and a **Following Ravi · Stop** chip show you're following. Scrolling, clicking or typing yourself, or Esc, stops it; so does them leaving the page. Each browser shares where it's looking in Yjs awareness, described so it works across screen sizes (which block is at the top of a doc; how far across a board).
+
+### Canvas
+
+Canvas pages are an infinite, live whiteboard. Tools (with shortcuts): **Select** V, **Pan** H, **Sticky note** N, **Rectangle** R, **Ellipse** O, **Text** T, **Arrow** A, **Pen** P.
+
+- Double-click empty space for a sticky note; double-click a shape (or press Enter) to edit its text.
+- Drag to move, use the corner handle to resize, Shift-click or drag a box to select several. Delete, Ctrl/⌘+D to duplicate, arrow keys to nudge, Ctrl/⌘+Z / Shift+Z to undo and redo your own changes.
+- Arrows drawn from one shape to another stay stuck to both as you move them.
+- Scroll to pan, Ctrl/⌘+scroll or pinch to zoom, plus zoom buttons and **Zoom to fit**.
+- Everyone's cursor and selection show live in their colour; Follow mode follows someone's view (where they're looking and their zoom).
+
+Each shape is its own Yjs map in a `shapes` map, so people editing different shapes never clash. Canvases work with everything else: Rewind (replay and restore), branches (with a list of changes and a merged preview), live sessions (recaps list what changed), and huddles. Drawing uses SVG, so it stays sharp at any zoom.
+
+### Catch-up
+
+Braid remembers when you last had each page open (a page counts as seen while it's on your screen, so changes you watched happen live don't count). **Catch up** in the sidebar lists pages others changed since then, with who changed them and how much; pages you've never opened count from when you joined. Open one to see exactly what changed — lines for docs, cards for boards, shapes for canvases — and **Replay from there** in Rewind. Pages also show a "Since you were here…" banner. Changes are worked out from Rewind history, so nothing extra is stored apart from one "last seen" time per page.
 
 ## License
 

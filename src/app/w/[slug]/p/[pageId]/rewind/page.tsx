@@ -30,10 +30,6 @@ async function Rewind({
   const backHref = `/w/${workspace.slug}/p/${page.id}`;
   const at = Number(Array.isArray(query.at) ? query.at[0] : query.at);
 
-  if (page.kind === "canvas") {
-    return <p className="p-10 text-muted-foreground">Rewind for canvases arrives with the canvas in Phase 9.</p>;
-  }
-
   return (
     <div className="flex h-dvh flex-col">
       <header className="flex min-h-14 flex-wrap items-center justify-between gap-3 border-b bg-card px-6 py-2">

@@ -129,7 +129,6 @@ export async function startSession(
   if (!access) return { ok: false, error: "That page no longer exists" };
   if (access.role === "guest") return { ok: false, error: "Guests can join sessions, but not start them" };
   if (access.page.archivedAt) return { ok: false, error: "Restore the page from Trash first" };
-  if (access.page.kind === "canvas") return { ok: false, error: "Sessions on canvases arrive in Phase 9" };
   const parsed = startInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 

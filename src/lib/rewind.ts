@@ -98,7 +98,7 @@ export class Replayer {
  * maps). Because it's just another change, a restore can itself be undone
  * by rewinding to before it.
  */
-export function restoreInto(live: Y.Doc, past: Y.Doc, kind: "doc" | "board") {
+export function restoreInto(live: Y.Doc, past: Y.Doc, kind: "doc" | "board" | "canvas") {
   live.transact(() => {
     if (kind === "doc") {
       const target = live.getXmlFragment("default");
@@ -109,7 +109,7 @@ export function restoreInto(live: Y.Doc, past: Y.Doc, kind: "doc" | "board") {
         source.toArray().map((node) => node.clone() as Y.XmlElement | Y.XmlText),
       );
     } else {
-      for (const name of ["columns", "cards"]) {
+      for (const name of kind === "board" ? ["columns", "cards"] : ["shapes"]) {
         const target = live.getMap<unknown>(name);
         const source = past.getMap<unknown>(name);
         for (const key of [...target.keys()]) target.delete(key);

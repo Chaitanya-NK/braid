@@ -58,3 +58,12 @@ export function timeAgo(date: Date, now: Date = new Date()) {
 export function minutesBetween(from: Date, to: Date) {
   return Math.max(1, Math.round((to.getTime() - from.getTime()) / 60_000));
 }
+
+/** "Ravi", "Ravi and Asha", "Ravi, Asha and 2 others". */
+export function namesList(names: string[], max = 2) {
+  if (names.length <= max) {
+    return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  }
+  const rest = names.length - max;
+  return `${names.slice(0, max).join(", ")} and ${rest} ${rest === 1 ? "other" : "others"}`;
+}

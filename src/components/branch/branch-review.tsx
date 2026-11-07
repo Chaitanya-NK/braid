@@ -7,7 +7,8 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import * as Y from "yjs";
 import type { HocuspocusProvider } from "@hocuspocus/provider";
-import { ReplayBoard } from "@/components/rewind/replay-views";
+import { ReplayBoard, ReplayCanvas } from "@/components/rewind/replay-views";
+import { diffCanvases } from "@/lib/canvas-model";
 import { ANNOUNCE_BRANCH_EVENT, useCollab, useSyncState, type Collab } from "@/components/collab/use-collab";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -35,7 +36,7 @@ type Props = {
   branchId: string;
   branchName: string;
   pageTitle: string;
-  kind: "doc" | "board";
+  kind: "doc" | "board" | "canvas";
   /** The page as it was when the branch started (base64 Yjs update). */
   base: string | null;
   me: Member;
@@ -140,13 +141,15 @@ function Review({
         merged,
       } as const;
     }
-    const changes = diffBoards(baseDoc, branch.doc, members);
+    // Boards and canvases both describe changes as a list ("Moved X to Done").
+    const diff = kind === "board" ? (a: Y.Doc, b: Y.Doc) => diffBoards(a, b, members) : diffCanvases;
+    const changes = diff(baseDoc, branch.doc);
     return {
       kind,
       changes,
       count: changes.length,
-      pageChanged: diffBoards(baseDoc, page.doc, members).length > 0,
-      result: diffBoards(page.doc, merged, members),
+      pageChanged: diff(baseDoc, page.doc).length > 0,
+      result: diff(page.doc, merged),
       merged,
     } as const;
     // version: re-read the live docs after every change.
@@ -297,12 +300,18 @@ function Review({
               </>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">The board as it will be after merging.</p>
+                <p className="text-sm text-muted-foreground">
+                  The {review.kind} as it will be after merging.
+                </p>
                 <div className="rounded-xl border bg-card p-4">
-                  <ReplayBoard doc={review.merged} version={version} members={members} />
+                  {review.kind === "board" ? (
+                    <ReplayBoard doc={review.merged} version={version} members={members} />
+                  ) : (
+                    <ReplayCanvas doc={review.merged} version={version} />
+                  )}
                 </div>
                 {review.result.length > 0 && (
-                  <BoardChangesView changes={review.result} label="What merging changes on the board" />
+                  <BoardChangesView changes={review.result} label={`What merging changes on the ${review.kind}`} />
                 )}
               </>
             )}

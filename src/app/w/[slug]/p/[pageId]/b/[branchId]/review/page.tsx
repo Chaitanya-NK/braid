@@ -24,7 +24,7 @@ async function ReviewContent({ params }: { params: Promise<{ slug: string; pageI
   const { user, color, workspace, page, role, branch, base } = await requireBranch(slug, pageId, branchId, true);
   const branchUrl = `/w/${workspace.slug}/p/${page.id}/b/${branch.id}`;
   // Merged and closed branches have nothing to review: show the branch itself.
-  if (branch.status !== "open" || page.kind === "canvas") redirect(branchUrl);
+  if (branch.status !== "open") redirect(branchUrl);
   const members = await listMembers(workspace.id);
 
   return (

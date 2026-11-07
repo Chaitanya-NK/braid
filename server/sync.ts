@@ -26,6 +26,8 @@ if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set. Copy .e
 const db = drizzle(postgres(process.env.DATABASE_URL, { max: 5 }), { schema });
 const port = Number(process.env.SYNC_PORT ?? 1234);
 const history = new HistoryRecorder(db);
+/** Marks the starter content Braid adds to new pages. */
+const SEED = Symbol("seed");
 const automations = new AutomationEngine(db);
 
 /**
@@ -120,24 +122,28 @@ const server = new Server<{ user: SyncClaims }>({
   async afterLoadDocument({ document, documentName }) {
     const { pageId, branchId } = parseDocName(documentName);
     if (branchId) return; // branches are copies: no seeding, no history of their own
-    // Before seeding, so a brand-new board's history starts with its columns.
-    await history.ensureBaseline(pageId, document);
     const [row] = await db
       .select({ kind: schema.page.kind })
       .from(schema.page)
       .where(eq(schema.page.id, pageId))
       .limit(1);
+    // A new board's starter columns are part of its starting point, not an
+    // edit by anyone: tagged SEED so they aren't recorded as a change, then
+    // included in the baseline below.
     if (row?.kind === "board") {
-      if (seedBoard(document)) console.log(`Seeded new board ${pageId}`);
-      automations.track(documentName, pageId, document);
+      document.transact(() => {
+        if (seedBoard(document)) console.log(`Seeded new board ${pageId}`);
+      }, SEED);
     }
+    await history.ensureBaseline(pageId, document);
+    if (row?.kind === "board") automations.track(documentName, pageId, document);
   },
 
   // Every change goes into Rewind history, credited to whoever made it.
   // Merging a branch shows up here too, credited to whoever merged it.
   async onChange({ documentName, update, context, transactionOrigin }) {
     const { pageId, branchId } = parseDocName(documentName);
-    if (branchId) return;
+    if (branchId || transactionOrigin === SEED) return;
     history.record(pageId, context?.user?.userId ?? null, update);
     // Branches don't run automations: they run once the branch is merged.
     automations.changed(documentName, transactionOrigin, context?.user?.userId ?? null);

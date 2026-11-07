@@ -43,6 +43,13 @@
       "when": 1794030341833,
       "tag": "0005_sessions_automations",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794034969098,
+      "tag": "0006_catch_up",
+      "breakpoints": true
     }
   ]
 }

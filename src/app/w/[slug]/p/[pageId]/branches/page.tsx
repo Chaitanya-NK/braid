@@ -28,7 +28,7 @@ async function BranchesContent({ params }: { params: Promise<{ slug: string; pag
   const { slug, pageId } = await params;
   const { workspace, page, role } = await requirePage(slug, pageId);
   const [branches, members] = await Promise.all([listBranches(page.id), listMembers(workspace.id)]);
-  const canCreate = role !== "guest" && !page.archivedAt && page.kind !== "canvas";
+  const canCreate = role !== "guest" && !page.archivedAt;
   const pageUrl = `/w/${workspace.slug}/p/${page.id}`;
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.name ?? "someone";
 
