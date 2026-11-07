@@ -7,6 +7,7 @@ import { Placeholder } from "@tiptap/extensions";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Eye } from "lucide-react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toolbar } from "./toolbar";
@@ -22,12 +23,27 @@ import {
 type Me = { id: string; name: string; color: string };
 
 /** A live, multiplayer doc. Content lives in Yjs and syncs through the sync server. */
-export function DocEditor({ pageId, me, readOnly }: { pageId: string; me: Me; readOnly: boolean }) {
-  const collab = useCollab(pageId, me.id, () =>
-    toast.error("Couldn't open this doc", {
-      description: "You may no longer have access, or your session expired. Try reloading.",
-      id: "doc-access",
-    }),
+export function DocEditor({
+  pageId,
+  branchId = null,
+  me,
+  readOnly,
+}: {
+  pageId: string;
+  /** Edit one of the page's branches instead of the page itself. */
+  branchId?: string | null;
+  me: Me;
+  readOnly: boolean;
+}) {
+  const collab = useCollab(
+    pageId,
+    me.id,
+    () =>
+      toast.error("Couldn't open this doc", {
+        description: "You may no longer have access, or your session expired. Try reloading.",
+        id: "doc-access",
+      }),
+    branchId,
   );
   if (!collab) return <EditorSkeleton />;
   return <LiveEditor collab={collab} me={me} readOnly={readOnly} />;
@@ -61,6 +77,11 @@ function LiveEditor({ collab, me, readOnly }: { collab: Collab; me: Me; readOnly
     },
     [doc, provider],
   );
+
+  // Becomes view-only live, e.g. when someone merges the branch you're on.
+  useEffect(() => {
+    editor?.setEditable(!readOnly);
+  }, [editor, readOnly]);
 
   return (
     <div className="flex flex-col gap-4">

@@ -36,6 +36,12 @@ export class OfflineTracker {
   }
 }
 
+/** Window event fired when the branch you have open is merged or closed by someone. */
+export const BRANCH_STATUS_EVENT = "braid:branch-status";
+
+/** Fire on window after merging or closing a branch; the open branch connection tells the sync server. */
+export const ANNOUNCE_BRANCH_EVENT = "braid:announce-branch-status";
+
 export type Collab = {
   doc: Y.Doc;
   provider: HocuspocusProvider;
@@ -44,14 +50,19 @@ export type Collab = {
 };
 
 /**
- * Opens a page's Yjs document: first from this browser's local copy, then
+ * Opens a page's (or a branch's) Yjs document: first from this browser's local copy, then
  * from the sync server. Returns null until it exists (it's browser-only).
  *
  * - Fetches a fresh sync ticket on every (re)connect.
  * - Disconnects the moment the browser goes offline and reconnects when it's
  *   back, so edits queue locally instead of waiting on a dead socket.
  */
-export function useCollab(pageId: string, userId: string, onAccessDenied: () => void): Collab | null {
+export function useCollab(
+  pageId: string,
+  userId: string,
+  onAccessDenied: () => void,
+  branchId: string | null = null,
+): Collab | null {
   const [collab, setCollab] = useState<Collab | null>(null);
 
   useEffect(() => {
@@ -59,7 +70,7 @@ export function useCollab(pageId: string, userId: string, onAccessDenied: () => 
     const tracker = new OfflineTracker();
 
     // Local copy first: the page shows its last-known content immediately.
-    const local = new IndexeddbPersistence(localDocName(userId, pageId), doc);
+    const local = new IndexeddbPersistence(localDocName(userId, pageId, branchId), doc);
     local.whenSynced.then(() => {
       tracker.localReady = true;
       tracker.emit();
@@ -67,10 +78,19 @@ export function useCollab(pageId: string, userId: string, onAccessDenied: () => 
 
     const provider = new HocuspocusProvider({
       url: syncServerUrl(),
-      name: docName(pageId),
+      name: docName(pageId, branchId),
       document: doc,
-      token: async () => (await getSyncToken(pageId)) ?? "",
+      token: async () => (await getSyncToken(pageId, branchId)) ?? "",
       onAuthenticationFailed: onAccessDenied,
+      // The sync server says a branch was merged or closed (see server/sync.ts).
+      onStateless: ({ payload }) => {
+        try {
+          const message = JSON.parse(payload) as { type?: string; status?: string };
+          if (message.type === "branch-status") {
+            window.dispatchEvent(new CustomEvent(BRANCH_STATUS_EVENT, { detail: { branchId, status: message.status } }));
+          }
+        } catch {}
+      },
     });
     const socket = provider.configuration.websocketProvider;
 
@@ -88,6 +108,10 @@ export function useCollab(pageId: string, userId: string, onAccessDenied: () => 
     };
     doc.on("update", onUpdate);
 
+    // Ask the sync server to lock this branch for everyone (it checks the database first).
+    const announce = () => provider.sendStateless(JSON.stringify({ type: "branch-status" }));
+    if (branchId) window.addEventListener(ANNOUNCE_BRANCH_EVENT, announce);
+
     const goOffline = () => socket.disconnect();
     const goOnline = () => socket.connect();
     window.addEventListener("offline", goOffline);
@@ -100,6 +124,7 @@ export function useCollab(pageId: string, userId: string, onAccessDenied: () => 
     return () => {
       window.removeEventListener("offline", goOffline);
       window.removeEventListener("online", goOnline);
+      window.removeEventListener(ANNOUNCE_BRANCH_EVENT, announce);
       doc.off("update", onUpdate);
       provider.destroy();
       local.destroy();
@@ -108,7 +133,7 @@ export function useCollab(pageId: string, userId: string, onAccessDenied: () => 
     };
     // onAccessDenied is intentionally not a dependency: reconnecting on every render would be wrong.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageId, userId]);
+  }, [pageId, userId, branchId]);
 
   return collab;
 }

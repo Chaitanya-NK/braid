@@ -169,7 +169,42 @@ export const pageUpdate = pgTable(
   (t) => [index("page_update_page_idx").on(t.pageId, t.id)],
 );
 
+export const branchStatus = pgEnum("branch_status", ["open", "merged", "closed"]);
+
+/**
+ * A branch: a private copy of a page that people edit on its own, then
+ * review and merge back. Its content is a Yjs document of its own, made by
+ * the sync server from the page the first time the branch is opened.
+ *
+ * - `base` is the page as it was when the branch started (or was last
+ *   updated from the page). Comparing it with `state` gives "what this
+ *   branch changed", for review.
+ * - `state` is the branch's live content, written by the sync server.
+ */
+export const pageBranch = pgTable(
+  "page_branch",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pageId: uuid("page_id")
+      .notNull()
+      .references(() => page.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    status: branchStatus("status").notNull().default("open"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id),
+    base: bytea("base"),
+    state: bytea("state"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    closedAt: timestamp("closed_at"),
+    closedBy: text("closed_by").references(() => user.id, { onDelete: "set null" }),
+  },
+  (t) => [index("page_branch_page_idx").on(t.pageId)],
+);
+
 export type Workspace = typeof workspace.$inferSelect;
 export type Page = typeof page.$inferSelect;
 export type PageKind = (typeof pageKind.enumValues)[number];
+export type BranchStatus = (typeof branchStatus.enumValues)[number];
 export type MemberRole = (typeof memberRole.enumValues)[number];

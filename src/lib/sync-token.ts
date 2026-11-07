@@ -9,6 +9,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export type SyncClaims = {
   pageId: string;
+  /** Set when the ticket is for one of the page's branches. */
+  branchId?: string | null;
   userId: string;
   name: string;
   color: string;
@@ -51,4 +53,4 @@ export function verifySyncToken(token: string): SyncClaims | null {
   }
 }
 
-export { docName } from "./doc-name";
+export { docName, parseDocName } from "./doc-name";

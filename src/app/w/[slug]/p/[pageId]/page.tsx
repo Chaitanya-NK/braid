@@ -5,7 +5,8 @@ import { KIND_LABEL, PageIcon } from "@/components/page-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listMembers, requirePage } from "@/lib/dal";
+import { listBranches, listMembers, requirePage } from "@/lib/dal";
+import { BranchMenu } from "@/components/branch/branch-menu";
 import { timeAgo } from "@/lib/utils";
 import { BoardView } from "@/components/board/board-view";
 import { DocEditor } from "@/components/editor/doc-editor";
@@ -24,6 +25,7 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
   const { slug, pageId } = await params;
   const { user, color, workspace, page, role } = await requirePage(slug, pageId);
   const canEdit = role !== "guest" && !page.archivedAt;
+  const branches = page.kind === "canvas" ? [] : (await listBranches(page.id)).filter((b) => b.status === "open");
 
   const header = (
     <header className="flex min-h-14 flex-wrap items-center justify-between gap-3 border-b bg-card px-6 py-2">
@@ -38,6 +40,15 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
         </span>
       </nav>
       <div className="flex items-center gap-1">
+        {page.kind !== "canvas" && (
+          <BranchMenu
+            slug={workspace.slug}
+            pageId={page.id}
+            pageTitle={page.title}
+            branches={branches.map((b) => ({ id: b.id, name: b.name, authorName: b.authorName, updatedAt: b.updatedAt }))}
+            canCreate={canEdit}
+          />
+        )}
         {page.kind !== "canvas" && (
           <Button asChild variant="ghost" size="sm">
             <Link href={`/w/${workspace.slug}/p/${page.id}/rewind`}>

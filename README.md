@@ -48,7 +48,7 @@ npm run dev
 - [x] **Phase 2 — Live boards:** kanban with drag and drop, live pointers, cursor chat, card details, reactions
 - [x] **Phase 3 — Offline-first:** keep working offline, local copies in the browser, merge on reconnect
 - [x] **Phase 4 — Rewind:** version history and replay player
-- [ ] **Phase 5 — Branches:** fork a page, compare, merge
+- [x] **Phase 5 — Branches:** fork a page, compare, merge
 - [ ] **Phase 6 — Collaboration:** invites, permissions, mentions, inbox, ⌘K search
 - [ ] **Phase 7 — Sessions & automations:** timed retros with voting, when-then rules
 - [ ] **Phase 8 — Huddles:** peer-to-peer voice and Follow mode
@@ -129,6 +129,17 @@ Click **Rewind** on any doc or board to open the player:
 - **Restore this moment** makes the page look like it did then, for everyone, live. The restore is a new change in history, so you can rewind past it and undo it. Guests and pages in the Trash can view history but can't restore.
 
 The player rebuilds the past in your browser by replaying the saved changes into a separate Yjs document, with a checkpoint every 25 steps so scrubbing stays fast.
+
+### Branches
+
+A branch is a private copy of a doc or board that you (and anyone else) can edit on its own, then review and merge back. Open **Branches** in a page's header to start one or switch between them.
+
+- **Edit apart.** Changes on a branch don't touch the page until it's merged. Others can join the branch and edit it live, like any page.
+- **Review.** **Review & merge** shows what the branch changed: for docs, added, removed and edited lines (with the exact words); for boards, cards added, removed, moved or edited. The **Page after merge** tab previews the result.
+- **Merge.** Merging lands live for everyone on the page. If the page changed in the meantime, both sets of changes are kept, and you can **Update branch from page** first to bring it up to date. Merges show up in Rewind, so they can be undone.
+- **Close.** Close a branch to drop it without merging; reopen it any time. Merged and closed branches become view-only for everyone, straight away, even people who have them open.
+
+How it works: the sync server makes the branch from the page the first time it's opened, so the two share their Yjs history. Merging just sends the page the branch changes it doesn't have yet, and Yjs combines them with whatever else changed. A branch also keeps a copy of the page as it was when the branch started (`page_branch.base`), which review compares against to show only the branch's own changes.
 
 ## License
 

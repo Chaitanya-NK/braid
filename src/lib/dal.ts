@@ -146,3 +146,45 @@ export async function listMembers(workspaceId: string) {
 export function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
+
+/* -------------------------------- Branches -------------------------------- */
+
+const branchColumns = {
+  id: schema.pageBranch.id,
+  pageId: schema.pageBranch.pageId,
+  name: schema.pageBranch.name,
+  status: schema.pageBranch.status,
+  createdBy: schema.pageBranch.createdBy,
+  createdAt: schema.pageBranch.createdAt,
+  updatedAt: schema.pageBranch.updatedAt,
+  closedAt: schema.pageBranch.closedAt,
+  closedBy: schema.pageBranch.closedBy,
+  authorName: schema.user.name,
+};
+
+/** A page's branches, newest first, with who started each one. */
+export async function listBranches(pageId: string) {
+  return db
+    .select(branchColumns)
+    .from(schema.pageBranch)
+    .innerJoin(schema.user, eq(schema.user.id, schema.pageBranch.createdBy))
+    .where(eq(schema.pageBranch.pageId, pageId))
+    .orderBy(desc(schema.pageBranch.createdAt));
+}
+
+export type BranchSummary = Awaited<ReturnType<typeof listBranches>>[number];
+
+/** Loads a branch of a page the user can see. `withBase` also returns the starting copy, for review. */
+export async function requireBranch(slug: string, pageId: string, branchId: string, withBase = false) {
+  const ctx = await requirePage(slug, pageId);
+  if (!isUuid(branchId)) notFound();
+  const [found] = await db
+    .select({ ...branchColumns, base: schema.pageBranch.base })
+    .from(schema.pageBranch)
+    .innerJoin(schema.user, eq(schema.user.id, schema.pageBranch.createdBy))
+    .where(and(eq(schema.pageBranch.id, branchId), eq(schema.pageBranch.pageId, pageId)))
+    .limit(1);
+  if (!found) notFound();
+  const { base, ...branch } = found;
+  return { ...ctx, branch, base: withBase && base ? base.toString("base64") : null };
+}

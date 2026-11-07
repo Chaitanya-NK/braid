@@ -42,21 +42,25 @@ import { CardFace, type Member } from "./card-tile";
 import { LivePointers } from "./live-pointers";
 import { setPresence, useBoardPeers, useBoardSnapshot, useCardActivity } from "./use-board";
 
-type Props = { pageId: string; me: Member; members: Member[]; readOnly: boolean };
+type Props = { pageId: string; branchId?: string | null; me: Member; members: Member[]; readOnly: boolean };
 
 /** A live, multiplayer kanban board backed by a Yjs document. */
-export function BoardView({ pageId, ...rest }: Props) {
-  const collab = useCollab(pageId, rest.me.id, () =>
-    toast.error("Couldn't open this board", {
-      description: "You may no longer have access, or your session expired. Try reloading.",
-      id: "board-access",
-    }),
+export function BoardView({ pageId, branchId = null, ...rest }: Props) {
+  const collab = useCollab(
+    pageId,
+    rest.me.id,
+    () =>
+      toast.error("Couldn't open this board", {
+        description: "You may no longer have access, or your session expired. Try reloading.",
+        id: "board-access",
+      }),
+    branchId,
   );
   if (!collab) return <BoardSkeleton />;
   return <LiveBoard collab={collab} {...rest} />;
 }
 
-function LiveBoard({ collab, me, members, readOnly }: Omit<Props, "pageId"> & { collab: Collab }) {
+function LiveBoard({ collab, me, members, readOnly }: Omit<Props, "pageId" | "branchId"> & { collab: Collab }) {
   const { doc, provider, tracker } = collab;
   const board = useBoardSnapshot(doc);
   const sync = useSyncState(provider);

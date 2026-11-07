@@ -22,6 +22,13 @@
       "when": 1794021026317,
       "tag": "0002_page_history",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794023525429,
+      "tag": "0003_page_branch",
+      "breakpoints": true
     }
   ]
 }

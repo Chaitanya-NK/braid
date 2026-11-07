@@ -9,8 +9,9 @@
 
 const PREFIX = "braid";
 
-export function localDocName(userId: string, pageId: string) {
-  return `${PREFIX}:${userId}:page:${pageId}`;
+export function localDocName(userId: string, pageId: string, branchId?: string | null) {
+  const page = `${PREFIX}:${userId}:page:${pageId}`;
+  return branchId ? `${page}:branch:${branchId}` : page;
 }
 
 /** Deletes every local copy belonging to this user. Safe to call when offline. */
