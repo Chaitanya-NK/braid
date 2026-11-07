@@ -14,6 +14,8 @@ import { Toolbar } from "./toolbar";
 import { mentionExtension, type Mentionable } from "./mention";
 import { notifyMention } from "@/lib/notification-actions";
 import { Presence, SyncBadge, useConnectionToasts } from "@/components/collab/status";
+import { usePublishCollab } from "@/components/collab/page-collab-store";
+import { applyDocView, FollowFrame, readDocView, useBroadcastView, useFollow } from "@/components/collab/follow";
 import {
   useCollab,
   usePeers,
@@ -50,6 +52,8 @@ export function DocEditor({
       }),
     branchId,
   );
+  // Let the huddle and follow UI use this page's connection (not a branch's).
+  usePublishCollab(branchId ? `branch:${branchId}` : pageId, collab);
   if (!collab) return <EditorSkeleton />;
   const onMention = (userId: string, snippet: string) =>
     void notifyMention(pageId, branchId, [userId], snippet).then(
@@ -114,6 +118,12 @@ function LiveEditor({
     [doc, provider],
   );
 
+  // Follow mode: share where I'm looking; follow someone else's view.
+  const contentRef = useRef<HTMLDivElement>(null);
+  const prose = () => contentRef.current?.querySelector<HTMLElement>(".ProseMirror") ?? null;
+  useBroadcastView(provider, () => readDocView(prose()), [editor]);
+  const { leader, follow, stop } = useFollow(provider, (view) => applyDocView(prose(), view));
+
   // Becomes view-only live, e.g. when someone merges the branch you're on.
   useEffect(() => {
     editor?.setEditable(!readOnly);
@@ -130,11 +140,12 @@ function LiveEditor({
           </span>
         )}
         <div className="flex items-center gap-3">
-          <Presence peers={peers} />
+          <Presence peers={peers} following={leader?.clientId ?? null} onFollow={(p) => (p ? follow(p) : stop())} />
           <SyncBadge state={sync} pending={pending} />
         </div>
       </div>
-      {editor ? <EditorContent editor={editor} /> : <EditorSkeleton />}
+      <div ref={contentRef}>{editor ? <EditorContent editor={editor} /> : <EditorSkeleton />}</div>
+      <FollowFrame leader={leader} onStop={stop} />
     </div>
   );
 }

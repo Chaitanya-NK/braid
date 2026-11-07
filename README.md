@@ -51,7 +51,7 @@ npm run dev
 - [x] **Phase 5 — Branches:** fork a page, compare, merge
 - [x] **Phase 6 — Collaboration:** invites, permissions, mentions, inbox, ⌘K search
 - [x] **Phase 7 — Sessions & automations:** timed live sessions with recaps, when-then board rules
-- [ ] **Phase 8 — Huddles:** peer-to-peer voice and Follow mode
+- [x] **Phase 8 — Huddles & follow mode:** drop-in voice/video/screen share on any page (WebRTC), follow a teammate's view
 - [ ] **Phase 9 — Canvas & Catch-up:** infinite canvas and "while you were away" digest
 
 ## Stack
@@ -165,6 +165,18 @@ Boards have **Automations**: rules like *"When a card moves to Done, check off i
 - **Then** (up to 6 steps): move it, set or clear its label, assign someone, unassign everyone, set a due date N days out, clear the due date, check off its checklist, notify its assignees / its creator / a person.
 
 Rules run on the sync server (`server/automations.ts`), not in browsers, so each one fires once per change however many people have the board open, including for offline edits when they sync. Changes a rule makes are tagged so they can't set off other rules, which rules out loops. Each board keeps a log of recent runs, rules can be paused with a switch, and nobody is notified about their own change. Branches don't run automations; they run once a branch is merged.
+
+### Huddles
+
+Every doc and board has a **Huddle** button: drop-in voice, plus camera and screen share, with whoever's on the page. The button shows who's already in it. The huddle panel shows everyone's tile (video when it's on), a green ring when someone is speaking, and mute, camera, share and leave controls. Leaving the page leaves the huddle. If your browser doesn't share a microphone you join listen-only.
+
+How it works: browsers talk to each other directly with WebRTC, so audio and video never pass through Braid's servers. The sync server only relays the short setup messages, and only to the one person each is for, stamped with who really sent it. Who's in the huddle lives in Yjs awareness. For each pair of people, the one with the larger random peer id makes the offer, so two people joining at once don't collide. Each call has one audio and one video slot; mute, camera and screen share just change what's in the slot.
+
+Routes between networks are found with Google's free STUN server. There's no TURN relay (that needs a paid service), so a few strict networks (some offices, some mobile carriers) can't connect directly; the panel says so when that happens.
+
+### Follow mode
+
+Click a teammate's avatar (next to "Saved") to follow them: your view follows theirs as they scroll, and on boards it opens the card they open. A frame in their colour and a **Following Ravi · Stop** chip show you're following. Scrolling, clicking or typing yourself, or Esc, stops it; so does them leaving the page. Each browser shares where it's looking in Yjs awareness, described so it works across screen sizes (which block is at the top of a doc; how far across a board).
 
 ## License
 

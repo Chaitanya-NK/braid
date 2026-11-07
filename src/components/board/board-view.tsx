@@ -17,6 +17,8 @@ import { Eye, MessageSquare, Plus } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Presence, SyncBadge, useConnectionToasts } from "@/components/collab/status";
+import { usePublishCollab } from "@/components/collab/page-collab-store";
+import { applyBoardView, FollowFrame, readBoardView, useBroadcastView, useFollow } from "@/components/collab/follow";
 import { useCollab, usePendingChanges, useSyncState, type Collab } from "@/components/collab/use-collab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +59,8 @@ export function BoardView({ pageId, branchId = null, ...rest }: Props) {
       }),
     branchId,
   );
+  // Let the huddle and follow UI use this page's connection (not a branch's).
+  usePublishCollab(branchId ? `branch:${branchId}` : pageId, collab);
   if (!collab) return <BoardSkeleton />;
   const onAssigned = (userId: string, cardTitle: string) =>
     void notifyAssigned(pageId, branchId, [userId], cardTitle).catch(() => {});
@@ -98,6 +102,11 @@ function LiveBoard({
   useEffect(() => {
     setPresence(provider, { editing: openCardId });
   }, [provider, openCardId]);
+
+  // Follow mode: share how far across the board I am and which card is open.
+  const scroller = () => surfaceRef.current?.parentElement ?? null;
+  useBroadcastView(provider, () => readBoardView(scroller(), openCardId), [openCardId]);
+  const { leader, follow, stop } = useFollow(provider, (view) => applyBoardView(scroller(), view, setOpenCardId));
 
   const filtering = onlyMine || labelFilter !== "all";
   const canEdit = !readOnly;
@@ -207,7 +216,7 @@ function LiveBoard({
             <MessageSquare className="size-3.5" aria-hidden="true" /> Press{" "}
             <kbd className="rounded border bg-muted px-1 font-mono">/</kbd> to chat
           </span>
-          <Presence peers={peers} />
+          <Presence peers={peers} following={leader?.clientId ?? null} onFollow={(p) => (p ? follow(p) : stop())} />
           <SyncBadge state={sync} pending={pending} />
         </div>
       </div>
@@ -271,6 +280,7 @@ function LiveBoard({
           })
         }
       />
+      <FollowFrame leader={leader} onStop={stop} />
     </div>
   );
 }

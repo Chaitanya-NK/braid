@@ -9,15 +9,52 @@ import type { OfflineTracker, SyncState } from "./use-collab";
 /* Presence avatars, the saved/offline badge and connection toasts,
    shared by docs and boards. */
 
-export function Presence({ peers }: { peers: { clientId: number; name: string; color: string }[] }) {
+type PresencePeer = { clientId: number; name: string; color: string };
+
+/**
+ * Everyone else on the page. With `onFollow`, each avatar is a button that
+ * starts (or stops) following that person.
+ */
+export function Presence({
+  peers,
+  following = null,
+  onFollow,
+}: {
+  peers: PresencePeer[];
+  following?: number | null;
+  onFollow?: (peer: PresencePeer | null) => void;
+}) {
   if (peers.length === 0) return <span className="text-xs text-muted-foreground">Only you here</span>;
   const shown = peers.slice(0, 4);
   return (
     <div className="flex items-center gap-2" aria-label={`Also here: ${peers.map((p) => p.name).join(", ")}`}>
       <div className="flex -space-x-2">
-        {shown.map((p) => (
-          <MemberAvatar key={p.clientId} name={p.name} color={p.color} className="size-7 ring-2 ring-background" />
-        ))}
+        {shown.map((p) => {
+          const avatar = (
+            <MemberAvatar
+              name={p.name}
+              color={p.color}
+              className={cn("size-7 ring-2 ring-background", following === p.clientId && "ring-offset-1")}
+            />
+          );
+          if (!onFollow) return <span key={p.clientId}>{avatar}</span>;
+          const on = following === p.clientId;
+          return (
+            <button
+              key={p.clientId}
+              type="button"
+              data-follow-ui
+              onClick={() => onFollow(on ? null : p)}
+              aria-pressed={on}
+              aria-label={on ? `Stop following ${p.name}` : `Follow ${p.name}`}
+              title={on ? `Stop following ${p.name}` : `Follow ${p.name}`}
+              className="rounded-full transition-transform hover:z-10 hover:-translate-y-0.5 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-ring"
+              style={on ? { boxShadow: `0 0 0 2px ${p.color}` } : undefined}
+            >
+              {avatar}
+            </button>
+          );
+        })}
         {peers.length > shown.length && (
           <span className="grid size-7 place-items-center rounded-full bg-zinc-200 text-xs font-semibold ring-2 ring-background">
             +{peers.length - shown.length}

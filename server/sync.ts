@@ -6,7 +6,7 @@
  * `npm run dev` starts both. Port 1234 by default (SYNC_PORT to change).
  */
 import { Database } from "@hocuspocus/extension-database";
-import { Server } from "@hocuspocus/server";
+import { Server, type Connection, type Document } from "@hocuspocus/server";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import * as Y from "yjs";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -48,6 +48,45 @@ async function forkBranch(pageId: string, branchId: string) {
     .where(and(eq(schema.pageBranch.id, branchId), isNull(schema.pageBranch.state)));
   console.log(`Branched ${branchId} from page ${pageId}`);
   return state;
+}
+
+/**
+ * Huddles are peer-to-peer WebRTC calls; the sync server only passes the
+ * setup messages between the two browsers involved. Each browser in a
+ * huddle has a random peer id. The first message from a peer id ties it to
+ * that connection, so nobody can pose as someone else's peer, and the
+ * sender's real user id (from their sync ticket) is stamped on.
+ */
+const rtcPeers = new Map<string, Connection<{ user: SyncClaims }>>();
+
+function relayRtc(document: Document, from: Connection<{ user: SyncClaims }>, payload: string) {
+  if (payload.length > 64_000) return;
+  let message: { from?: unknown; to?: unknown };
+  try {
+    message = JSON.parse(payload);
+  } catch {
+    return;
+  }
+  if (typeof message.from !== "string" || typeof message.to !== "string") return;
+  const owner = rtcPeers.get(message.from);
+  const open = new Set(document.getConnections());
+  if (owner && owner !== from && open.has(owner)) return; // someone else's peer id
+  rtcPeers.set(message.from, from);
+  if ((message as { kind?: unknown }).kind === "hello") return; // just registering
+  const target = rtcPeers.get(message.to);
+  if (!target || !open.has(target)) return;
+  document.broadcastStateless(
+    JSON.stringify({ ...message, fromUser: from.context?.user?.userId ?? null }),
+    (connection) => connection === target,
+  );
+}
+
+/** Forget huddle peers whose connection has closed. */
+function forgetRtcPeers(document: Document) {
+  const open = new Set(document.getConnections());
+  for (const [peerId, connection] of rtcPeers) {
+    if (connection.document === document && !open.has(connection)) rtcPeers.delete(peerId);
+  }
 }
 
 /** The `type` of a small JSON message from a browser, or null. */
@@ -110,6 +149,11 @@ const server = new Server<{ user: SyncClaims }>({
   async onStateless({ documentName, document, payload, connection }) {
     const { branchId } = parseDocName(documentName);
     const type = pingType(payload);
+    // Huddle (WebRTC) setup: pass it to the one person it's for.
+    if (!branchId && type === "rtc") {
+      relayRtc(document, connection, payload);
+      return;
+    }
     // "A live session on this page changed": pass it on so everyone re-checks.
     // It carries no data, so there's nothing to trust or check here.
     if (!branchId && type === "session-changed") {
@@ -129,6 +173,10 @@ const server = new Server<{ user: SyncClaims }>({
       JSON.stringify({ type: "branch-status", status: branch.status }),
       (other) => other !== connection,
     );
+  },
+
+  async onDisconnect({ document }) {
+    forgetRtcPeers(document);
   },
 
   async beforeUnloadDocument({ documentName }) {

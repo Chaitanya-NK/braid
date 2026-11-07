@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { listBranches, listMembers, requirePage } from "@/lib/dal";
 import { BranchMenu } from "@/components/branch/branch-menu";
 import { SessionBar, SessionMenu } from "@/components/session/session-bar";
+import { HuddleButton, HuddlePanel } from "@/components/huddle/huddle-ui";
 import { getLiveSession } from "@/lib/session-actions";
 import { timeAgo } from "@/lib/utils";
 import { BoardView } from "@/components/board/board-view";
@@ -53,6 +54,7 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
             canCreate={canEdit}
           />
         )}
+        {page.kind !== "canvas" && <HuddleButton pageId={page.id} />}
         {page.kind !== "canvas" && <SessionMenu pageId={page.id} sessionsHref={sessionsHref} canStart={canEdit} />}
         {page.kind === "board" && (
           <Button asChild variant="ghost" size="sm">
@@ -75,7 +77,10 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
 
   const sessionBar =
     page.kind === "canvas" ? null : (
-      <SessionBar pageId={page.id} initial={live} meId={user.id} canManage={canEdit} sessionsHref={sessionsHref} />
+      <>
+        <SessionBar pageId={page.id} initial={live} meId={user.id} canManage={canEdit} sessionsHref={sessionsHref} />
+        <HuddlePanel pageId={page.id} me={{ name: user.name, color }} />
+      </>
     );
 
   const title = canEdit ? (
