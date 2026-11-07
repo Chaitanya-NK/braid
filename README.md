@@ -50,7 +50,7 @@ npm run dev
 - [x] **Phase 4 — Rewind:** version history and replay player
 - [x] **Phase 5 — Branches:** fork a page, compare, merge
 - [x] **Phase 6 — Collaboration:** invites, permissions, mentions, inbox, ⌘K search
-- [x] **Phase 7 — Sessions & automations:** timed retros with voting, when-then rules
+- [x] **Phase 7 — Sessions & automations:** timed live sessions with recaps, when-then board rules
 - [ ] **Phase 8 — Huddles:** peer-to-peer voice and Follow mode
 - [ ] **Phase 9 — Canvas & Catch-up:** infinite canvas and "while you were away" digest
 
