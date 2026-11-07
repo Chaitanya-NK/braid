@@ -53,3 +53,8 @@ export function timeAgo(date: Date, now: Date = new Date()) {
   if (abs < 86400 * 7) return rtf.format(Math.round(seconds / 86400), "day");
   return date.toLocaleDateString("en", { month: "short", day: "numeric" });
 }
+
+/** Whole minutes between two times, at least 1. */
+export function minutesBetween(from: Date, to: Date) {
+  return Math.max(1, Math.round((to.getTime() - from.getTime()) / 60_000));
+}

@@ -1,6 +1,16 @@
 "use client";
 
-import { AtSign, CheckCheck, GitMerge, Inbox, SquareKanban, UserPlus, type LucideIcon } from "lucide-react";
+import {
+  AtSign,
+  CheckCheck,
+  GitMerge,
+  Inbox,
+  Radio,
+  SquareKanban,
+  UserPlus,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -29,6 +39,8 @@ const ICON: Record<NotificationKind, LucideIcon> = {
   assigned: SquareKanban,
   branch_merged: GitMerge,
   member_joined: UserPlus,
+  automation: Workflow,
+  session_started: Radio,
 };
 
 const changed = () => window.dispatchEvent(new Event(INBOX_CHANGED_EVENT));

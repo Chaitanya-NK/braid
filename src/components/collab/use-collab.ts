@@ -39,6 +39,11 @@ export class OfflineTracker {
 /** Window event fired when the branch you have open is merged or closed by someone. */
 export const BRANCH_STATUS_EVENT = "braid:branch-status";
 
+/** Fire on window after changing a live session; the page's connection tells everyone else on it. */
+export const ANNOUNCE_SESSION_EVENT = "braid:announce-session";
+/** Fired on window when someone else changed this page's live session. */
+export const SESSION_CHANGED_EVENT = "braid:session-changed";
+
 /** Fire on window after merging or closing a branch; the open branch connection tells the sync server. */
 export const ANNOUNCE_BRANCH_EVENT = "braid:announce-branch-status";
 
@@ -89,6 +94,9 @@ export function useCollab(
           if (message.type === "branch-status") {
             window.dispatchEvent(new CustomEvent(BRANCH_STATUS_EVENT, { detail: { branchId, status: message.status } }));
           }
+          if (message.type === "session-changed" && !branchId) {
+            window.dispatchEvent(new CustomEvent(SESSION_CHANGED_EVENT, { detail: { pageId } }));
+          }
         } catch {}
       },
     });
@@ -111,6 +119,8 @@ export function useCollab(
     // Ask the sync server to lock this branch for everyone (it checks the database first).
     const announce = () => provider.sendStateless(JSON.stringify({ type: "branch-status" }));
     if (branchId) window.addEventListener(ANNOUNCE_BRANCH_EVENT, announce);
+    const announceSession = () => provider.sendStateless(JSON.stringify({ type: "session-changed" }));
+    if (!branchId) window.addEventListener(ANNOUNCE_SESSION_EVENT, announceSession);
 
     const goOffline = () => socket.disconnect();
     const goOnline = () => socket.connect();
@@ -125,6 +135,7 @@ export function useCollab(
       window.removeEventListener("offline", goOffline);
       window.removeEventListener("online", goOnline);
       window.removeEventListener(ANNOUNCE_BRANCH_EVENT, announce);
+      window.removeEventListener(ANNOUNCE_SESSION_EVENT, announceSession);
       doc.off("update", onUpdate);
       provider.destroy();
       local.destroy();

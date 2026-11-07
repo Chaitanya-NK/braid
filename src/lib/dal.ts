@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gt, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNotNull, isNull, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { db, schema } from "@/db";
@@ -258,4 +258,101 @@ export async function listNotifications(userId: string, workspaceId: string, lim
     .where(and(eq(schema.notification.userId, userId), eq(schema.notification.workspaceId, workspaceId)))
     .orderBy(desc(schema.notification.createdAt))
     .limit(limit);
+}
+
+/* ------------------------------- Automations ------------------------------ */
+
+export async function listAutomations(pageId: string) {
+  return db
+    .select()
+    .from(schema.automation)
+    .where(eq(schema.automation.pageId, pageId))
+    .orderBy(asc(schema.automation.createdAt));
+}
+
+export async function listAutomationRuns(pageId: string, limit = 20) {
+  return db
+    .select({
+      id: schema.automationRun.id,
+      automationId: schema.automationRun.automationId,
+      cardTitle: schema.automationRun.cardTitle,
+      summary: schema.automationRun.summary,
+      createdAt: schema.automationRun.createdAt,
+      actorName: schema.user.name,
+    })
+    .from(schema.automationRun)
+    .leftJoin(schema.user, eq(schema.user.id, schema.automationRun.actorId))
+    .where(eq(schema.automationRun.pageId, pageId))
+    .orderBy(desc(schema.automationRun.id))
+    .limit(limit);
+}
+
+/** A page's saved Yjs state (may be a few seconds behind live edits). */
+export async function loadPageDoc(pageId: string) {
+  const [row] = await db
+    .select({ state: schema.pageDoc.state })
+    .from(schema.pageDoc)
+    .where(eq(schema.pageDoc.pageId, pageId))
+    .limit(1);
+  return row?.state ?? null;
+}
+
+/* -------------------------------- Sessions -------------------------------- */
+
+export async function listSessions(pageId: string) {
+  return db
+    .select({
+      id: schema.workSession.id,
+      title: schema.workSession.title,
+      goal: schema.workSession.goal,
+      startedAt: schema.workSession.startedAt,
+      endsAt: schema.workSession.endsAt,
+      endedAt: schema.workSession.endedAt,
+      startedByName: schema.user.name,
+    })
+    .from(schema.workSession)
+    .innerJoin(schema.user, eq(schema.user.id, schema.workSession.startedBy))
+    .where(eq(schema.workSession.pageId, pageId))
+    .orderBy(desc(schema.workSession.startedAt));
+}
+
+export async function getSessionWithPeople(pageId: string, sessionId: string) {
+  if (!isUuid(sessionId)) return null;
+  const [session] = await db
+    .select({ session: schema.workSession, startedByName: schema.user.name })
+    .from(schema.workSession)
+    .innerJoin(schema.user, eq(schema.user.id, schema.workSession.startedBy))
+    .where(and(eq(schema.workSession.id, sessionId), eq(schema.workSession.pageId, pageId)))
+    .limit(1);
+  if (!session) return null;
+  const joined = await db
+    .select({ userId: schema.sessionParticipant.userId })
+    .from(schema.sessionParticipant)
+    .where(eq(schema.sessionParticipant.sessionId, sessionId));
+  return { ...session.session, startedByName: session.startedByName, joined: joined.map((j) => j.userId) };
+}
+
+/** Live sessions anywhere in a workspace, for "Live now" on the home page. */
+export async function listLiveSessions(workspaceId: string) {
+  return db
+    .select({
+      id: schema.workSession.id,
+      title: schema.workSession.title,
+      pageId: schema.workSession.pageId,
+      pageTitle: schema.page.title,
+      endsAt: schema.workSession.endsAt,
+      startedByName: schema.user.name,
+    })
+    .from(schema.workSession)
+    .innerJoin(schema.page, eq(schema.page.id, schema.workSession.pageId))
+    .innerJoin(schema.user, eq(schema.user.id, schema.workSession.startedBy))
+    .where(
+      and(
+        eq(schema.workSession.workspaceId, workspaceId),
+        isNull(schema.workSession.endedAt),
+        // Not ones whose timer ran out a while ago with nobody there.
+        sql`${schema.workSession.endsAt} > now() - interval '2 minutes'`,
+      ),
+    )
+    .orderBy(desc(schema.workSession.startedAt));
 }

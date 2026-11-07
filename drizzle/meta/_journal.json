@@ -36,6 +36,13 @@
       "when": 1794027394806,
       "tag": "0004_collaboration",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794030341833,
+      "tag": "0005_sessions_automations",
+      "breakpoints": true
     }
   ]
 }

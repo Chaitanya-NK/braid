@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createPage } from "@/lib/actions";
-import { listRecentPages, requireWorkspace } from "@/lib/dal";
+import { listLiveSessions, listRecentPages, requireWorkspace } from "@/lib/dal";
 import { timeAgo } from "@/lib/utils";
 
 export default function WorkspaceHome({ params }: PageProps<"/w/[slug]">) {
@@ -21,7 +21,7 @@ export default function WorkspaceHome({ params }: PageProps<"/w/[slug]">) {
 async function Home({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const { user, workspace } = await requireWorkspace(slug);
-  const recent = await listRecentPages(workspace.id);
+  const [recent, live] = await Promise.all([listRecentPages(workspace.id), listLiveSessions(workspace.id)]);
   const firstName = user.name.split(" ")[0];
 
   return (
@@ -44,6 +44,29 @@ async function Home({ params }: { params: Promise<{ slug: string }> }) {
           </Button>
         </form>
       </header>
+
+      {live.length > 0 && (
+        <section aria-labelledby="live-h">
+          <h2 id="live-h" className="mb-3 flex items-center gap-2 text-sm font-semibold text-red-700">
+            <span className="size-2 rounded-full bg-red-600" aria-hidden="true" /> Live now
+          </h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {live.map((s) => (
+              <li key={s.id}>
+                <Link
+                  href={`/w/${workspace.slug}/p/${s.pageId}`}
+                  className="flex flex-col rounded-xl border border-red-200 bg-red-50/60 p-4 hover:border-red-300"
+                >
+                  <span className="font-medium">{s.title}</span>
+                  <span className="text-sm text-muted-foreground">
+                    on {s.pageTitle} · started by {s.startedByName}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section aria-labelledby="recent-h">
         <h2 id="recent-h" className="mb-3 text-sm font-semibold text-muted-foreground">

@@ -12,6 +12,10 @@ export function describe(n: { kind: NotificationKind; actorName: string | null; 
       return `${who} merged your branch “${n.snippet ?? ""}” into ${n.subject}`;
     case "member_joined":
       return `${who} joined ${n.subject}`;
+    case "automation":
+      return `Automation in ${n.subject}: ${n.snippet ?? ""}`;
+    case "session_started":
+      return `${who} started a live session: ${n.snippet ?? ""} in ${n.subject}`;
   }
 }
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { History } from "lucide-react";
+import { History, Workflow } from "lucide-react";
 import { Suspense } from "react";
 import { KIND_LABEL, PageIcon } from "@/components/page-icon";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listBranches, listMembers, requirePage } from "@/lib/dal";
 import { BranchMenu } from "@/components/branch/branch-menu";
+import { SessionBar, SessionMenu } from "@/components/session/session-bar";
+import { getLiveSession } from "@/lib/session-actions";
 import { timeAgo } from "@/lib/utils";
 import { BoardView } from "@/components/board/board-view";
 import { DocEditor } from "@/components/editor/doc-editor";
@@ -26,6 +28,8 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
   const { user, color, workspace, page, role } = await requirePage(slug, pageId);
   const canEdit = role !== "guest" && !page.archivedAt;
   const branches = page.kind === "canvas" ? [] : (await listBranches(page.id)).filter((b) => b.status === "open");
+  const live = page.kind === "canvas" ? null : await getLiveSession(page.id);
+  const sessionsHref = `/w/${workspace.slug}/p/${page.id}/sessions`;
 
   const header = (
     <header className="flex min-h-14 flex-wrap items-center justify-between gap-3 border-b bg-card px-6 py-2">
@@ -49,6 +53,14 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
             canCreate={canEdit}
           />
         )}
+        {page.kind !== "canvas" && <SessionMenu pageId={page.id} sessionsHref={sessionsHref} canStart={canEdit} />}
+        {page.kind === "board" && (
+          <Button asChild variant="ghost" size="sm">
+            <Link href={`/w/${workspace.slug}/p/${page.id}/automations`}>
+              <Workflow aria-hidden="true" /> Automations
+            </Link>
+          </Button>
+        )}
         {page.kind !== "canvas" && (
           <Button asChild variant="ghost" size="sm">
             <Link href={`/w/${workspace.slug}/p/${page.id}/rewind`}>
@@ -60,6 +72,11 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
       </div>
     </header>
   );
+
+  const sessionBar =
+    page.kind === "canvas" ? null : (
+      <SessionBar pageId={page.id} initial={live} meId={user.id} canManage={canEdit} sessionsHref={sessionsHref} />
+    );
 
   const title = canEdit ? (
     <TitleEditor pageId={page.id} initialTitle={page.title} size={page.kind === "board" ? "md" : "lg"} />
@@ -76,6 +93,7 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
     return (
       <div className="flex h-dvh flex-col">
         {header}
+        {sessionBar}
         <div className="flex items-center gap-3 bg-card px-6 pt-4 pb-1">{title}</div>
         <BoardView
           pageId={page.id}
@@ -90,6 +108,7 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
   return (
     <div className="flex flex-col">
       {header}
+      {sessionBar}
       <article className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-14">
         <Badge variant="secondary">
           <PageIcon kind={page.kind} /> {KIND_LABEL[page.kind]}

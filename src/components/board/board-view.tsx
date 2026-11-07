@@ -84,6 +84,7 @@ function LiveBoard({
   const surfaceRef = useRef<HTMLDivElement>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const justMoved = useRef(false);
   const [onlyMine, setOnlyMine] = useState(false);
   const [labelFilter, setLabelFilter] = useState<Label | "all">("all");
   const memberMap = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
@@ -127,7 +128,10 @@ function LiveBoard({
 
   // Crossing into another column moves the card right away, so everyone sees it travel.
   function onDragOver({ active, over }: DragOverEvent) {
-    if (!over) return;
+    // Moving a card resizes the columns, which can make dnd-kit think it's
+    // back over the old one and bounce it forever. Ignore drag-over until
+    // the layout has settled (the fix from dnd-kit's multi-container example).
+    if (!over || justMoved.current) return;
     const cardId = String(active.id);
     const overId = String(over.id);
     const from = columnOf(cardId);
@@ -137,6 +141,8 @@ function LiveBoard({
     if (!target) return;
     const overIndex = overId.startsWith("col:") ? -1 : target.cards.findIndex((c) => c.id === overId);
     moveCard(doc, cardId, to, overIndex < 0 ? target.cards.length : overIndex);
+    justMoved.current = true;
+    requestAnimationFrame(() => (justMoved.current = false));
   }
 
   // Within a column, settle the final position on drop.

@@ -50,7 +50,7 @@ npm run dev
 - [x] **Phase 4 — Rewind:** version history and replay player
 - [x] **Phase 5 — Branches:** fork a page, compare, merge
 - [x] **Phase 6 — Collaboration:** invites, permissions, mentions, inbox, ⌘K search
-- [ ] **Phase 7 — Sessions & automations:** timed retros with voting, when-then rules
+- [x] **Phase 7 — Sessions & automations:** timed retros with voting, when-then rules
 - [ ] **Phase 8 — Huddles:** peer-to-peer voice and Follow mode
 - [ ] **Phase 9 — Canvas & Catch-up:** infinite canvas and "while you were away" digest
 
@@ -148,6 +148,23 @@ How it works: the sync server makes the branch from the page the first time it's
 - **@mentions.** Type **@** in a doc to mention someone. They get a notification quoting the sentence, and see their own mentions highlighted.
 - **Inbox.** Mentions, card assignments, merged branches and new members land in **Inbox**, with an unread count in the sidebar. Braid checks for new ones every 15 seconds while the tab is open and shows a toast for each.
 - **⌘K / Ctrl K.** Jump to any page, create a doc, board or canvas, go to Inbox, Trash or Settings, or switch workspace, all from the keyboard. There's also a **Search** button at the top of the sidebar.
+
+### Live sessions
+
+Start a timed session on any doc or board from **Session → Start a live session…**: give it a name, a length and (optionally) a goal. Everyone in the workspace gets a heads-up, and everyone on the page sees a red **Live** banner with the countdown and who's joined. Anyone can **Join**; members can add **+5 min** or **End session**. Live sessions also show on the workspace home under **Live now**.
+
+When a session ends, Braid writes a recap from the page's Rewind history: how many edits each person made, what changed (lines for docs, cards for boards), and a **Replay this session** button that opens Rewind at the session's first change. A session nobody ends closes itself two minutes after its timer runs out. Past sessions are under **Session → Past sessions**.
+
+Start/join/extend/end messages travel over the same sync connection as edits (the sync server passes them on), so the banner updates instantly for everyone.
+
+### Automations
+
+Boards have **Automations**: rules like *"When a card moves to Done, check off its checklist and notify whoever made it."* Pick from templates built from your own columns, or build your own:
+
+- **When:** a card is added (to a column, or anywhere), moves to a column, gets a label, or its checklist is all done.
+- **Then** (up to 6 steps): move it, set or clear its label, assign someone, unassign everyone, set a due date N days out, clear the due date, check off its checklist, notify its assignees / its creator / a person.
+
+Rules run on the sync server (`server/automations.ts`), not in browsers, so each one fires once per change however many people have the board open, including for offline edits when they sync. Changes a rule makes are tagged so they can't set off other rules, which rules out loops. Each board keeps a log of recent runs, rules can be paused with a switch, and nobody is notified about their own change. Branches don't run automations; they run once a branch is merged.
 
 ## License
 

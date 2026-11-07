@@ -2,6 +2,7 @@
 
 import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "@/db";
+import type { NotificationKind } from "@/db/schema";
 import { requireUser } from "@/lib/dal";
 import { notify } from "@/lib/notify";
 
@@ -79,7 +80,7 @@ export async function notifyAssigned(pageId: string, branchId: string | null, us
 
 export type InboxItem = {
   id: string;
-  kind: "mention" | "assigned" | "branch_merged" | "member_joined";
+  kind: NotificationKind;
   subject: string;
   snippet: string | null;
   url: string;

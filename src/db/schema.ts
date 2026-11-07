@@ -4,6 +4,7 @@ import {
   customType,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -235,6 +236,8 @@ export const notificationKind = pgEnum("notification_kind", [
   "assigned",
   "branch_merged",
   "member_joined",
+  "automation",
+  "session_started",
 ]);
 
 /** One item in someone's inbox. `url` is where clicking it goes. */
@@ -259,6 +262,98 @@ export const notification = pgTable(
     readAt: timestamp("read_at"),
   },
   (t) => [index("notification_user_idx").on(t.userId, t.createdAt)],
+);
+
+/**
+ * A board rule: "when a card moves to Done, check off its checklist".
+ * Runs on the sync server, once per change, whoever made it. The shapes of
+ * `trigger` and `actions` are in src/lib/automation-model.ts.
+ */
+export const automation = pgTable(
+  "automation",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pageId: uuid("page_id")
+      .notNull()
+      .references(() => page.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    trigger: jsonb("trigger").notNull(),
+    actions: jsonb("actions").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id),
+    runCount: integer("run_count").notNull().default(0),
+    lastRunAt: timestamp("last_run_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("automation_page_idx").on(t.pageId)],
+);
+
+/** Each time a rule ran, on which card, and what it did. Shown as "Recent runs". */
+export const automationRun = pgTable(
+  "automation_run",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    automationId: uuid("automation_id")
+      .notNull()
+      .references(() => automation.id, { onDelete: "cascade" }),
+    pageId: uuid("page_id")
+      .notNull()
+      .references(() => page.id, { onDelete: "cascade" }),
+    cardId: text("card_id").notNull(),
+    cardTitle: text("card_title").notNull(),
+    // Whose change set it off.
+    actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+    summary: text("summary").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("automation_run_page_idx").on(t.pageId, t.id)],
+);
+
+/**
+ * A live session: a timed, shared working block on a page ("Sprint
+ * planning, 30 min"). When it ends, `recap` holds who did what, worked out
+ * from the page's Rewind history.
+ */
+export const workSession = pgTable(
+  "work_session",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pageId: uuid("page_id")
+      .notNull()
+      .references(() => page.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    goal: text("goal"),
+    startedBy: text("started_by")
+      .notNull()
+      .references(() => user.id),
+    startedAt: timestamp("started_at").notNull().defaultNow(),
+    // When the timer runs out; "+5 min" moves it.
+    endsAt: timestamp("ends_at").notNull(),
+    endedAt: timestamp("ended_at"),
+    endedBy: text("ended_by").references(() => user.id, { onDelete: "set null" }),
+    recap: jsonb("recap"),
+  },
+  (t) => [index("session_page_idx").on(t.pageId, t.startedAt), index("session_workspace_idx").on(t.workspaceId)],
+);
+
+export const sessionParticipant = pgTable(
+  "session_participant",
+  {
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => workSession.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.sessionId, t.userId] })],
 );
 
 export type Workspace = typeof workspace.$inferSelect;

@@ -13,6 +13,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../src/db/schema";
 import { seedBoard } from "../src/lib/board-model";
+import { AutomationEngine } from "./automations";
 import { HistoryRecorder } from "./history";
 import { docName, parseDocName, verifySyncToken, type SyncClaims } from "../src/lib/sync-token";
 
@@ -25,6 +26,7 @@ if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set. Copy .e
 const db = drizzle(postgres(process.env.DATABASE_URL, { max: 5 }), { schema });
 const port = Number(process.env.SYNC_PORT ?? 1234);
 const history = new HistoryRecorder(db);
+const automations = new AutomationEngine(db);
 
 /**
  * A new branch starts as a copy of its page, made here the first time the
@@ -48,10 +50,11 @@ async function forkBranch(pageId: string, branchId: string) {
   return state;
 }
 
-function parseStatusPing(payload: string) {
+/** The `type` of a small JSON message from a browser, or null. */
+function pingType(payload: string) {
   try {
-    const message = JSON.parse(payload) as { type?: string };
-    return message.type === "branch-status" ? message : null;
+    const message = JSON.parse(payload) as { type?: unknown };
+    return typeof message.type === "string" ? message.type : null;
   } catch {
     return null;
   }
@@ -85,16 +88,20 @@ const server = new Server<{ user: SyncClaims }>({
       .from(schema.page)
       .where(eq(schema.page.id, pageId))
       .limit(1);
-    if (row?.kind === "board" && seedBoard(document)) {
-      console.log(`Seeded new board ${pageId}`);
+    if (row?.kind === "board") {
+      if (seedBoard(document)) console.log(`Seeded new board ${pageId}`);
+      automations.track(documentName, pageId, document);
     }
   },
 
   // Every change goes into Rewind history, credited to whoever made it.
   // Merging a branch shows up here too, credited to whoever merged it.
-  async onChange({ documentName, update, context }) {
+  async onChange({ documentName, update, context, transactionOrigin }) {
     const { pageId, branchId } = parseDocName(documentName);
-    if (!branchId) history.record(pageId, context?.user?.userId ?? null, update);
+    if (branchId) return;
+    history.record(pageId, context?.user?.userId ?? null, update);
+    // Branches don't run automations: they run once the branch is merged.
+    automations.changed(documentName, transactionOrigin, context?.user?.userId ?? null);
   },
 
   // After a branch is merged or closed, the browser that did it asks us to
@@ -102,7 +109,14 @@ const server = new Server<{ user: SyncClaims }>({
   // connection view-only and tell them, so nobody keeps typing into it.
   async onStateless({ documentName, document, payload, connection }) {
     const { branchId } = parseDocName(documentName);
-    if (!branchId || parseStatusPing(payload) === null) return;
+    const type = pingType(payload);
+    // "A live session on this page changed": pass it on so everyone re-checks.
+    // It carries no data, so there's nothing to trust or check here.
+    if (!branchId && type === "session-changed") {
+      document.broadcastStateless(JSON.stringify({ type }), (other) => other !== connection);
+      return;
+    }
+    if (!branchId || type !== "branch-status") return;
     const [branch] = await db
       .select({ status: schema.pageBranch.status })
       .from(schema.pageBranch)
@@ -119,6 +133,7 @@ const server = new Server<{ user: SyncClaims }>({
 
   async beforeUnloadDocument({ documentName }) {
     const { pageId, branchId } = parseDocName(documentName);
+    automations.forget(documentName);
     if (!branchId) await history.flushPage(pageId);
   },
 
