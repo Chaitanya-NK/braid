@@ -1,4 +1,8 @@
-import { House, Plus, Settings, Trash2 } from "lucide-react";
+import { House, Inbox, Plus, Settings, Trash2 } from "lucide-react";
+import { UnreadBadge } from "@/components/inbox/unread-badge";
+import { CommandPalette, SearchButton } from "@/components/command-palette";
+import { canManageMembers } from "@/lib/permissions";
+import { getInboxStatus } from "@/lib/notification-actions";
 import { KIND_LABEL, PageIcon } from "@/components/page-icon";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,17 +17,33 @@ const asideClass =
 
 export async function Sidebar({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { user, workspace, color } = await requireWorkspace(slug);
-  const [pages, workspaces] = await Promise.all([listPages(workspace.id), listMyWorkspaces(user.id)]);
+  const { user, workspace, color, role } = await requireWorkspace(slug);
+  const [pages, workspaces, inbox] = await Promise.all([
+    listPages(workspace.id),
+    listMyWorkspaces(user.id),
+    getInboxStatus(workspace.id),
+  ]);
   const base = `/w/${workspace.slug}`;
 
   return (
     <aside aria-label="Workspace" className={asideClass}>
       <WorkspaceSwitcher current={workspace} workspaces={workspaces} />
+      <SearchButton />
+      <CommandPalette
+        workspace={{ id: workspace.id, slug: workspace.slug, name: workspace.name }}
+        pages={pages.map((p) => ({ id: p.id, title: p.title, kind: p.kind }))}
+        workspaces={workspaces.map((w) => ({ slug: w.slug, name: w.name }))}
+        canCreate={role !== "guest"}
+        canInvite={canManageMembers(role)}
+      />
 
       <nav aria-label="Workspace sections" className="flex flex-col gap-0.5">
         <NavLink href={base} exact>
           <House className="size-4" aria-hidden="true" /> Home
+        </NavLink>
+        <NavLink href={`${base}/inbox`}>
+          <Inbox className="size-4" aria-hidden="true" /> Inbox
+          <UnreadBadge workspaceId={workspace.id} initial={inbox.unread} />
         </NavLink>
         <NavLink href={`${base}/trash`}>
           <Trash2 className="size-4" aria-hidden="true" /> Trash

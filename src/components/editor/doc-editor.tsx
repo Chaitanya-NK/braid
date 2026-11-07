@@ -7,10 +7,12 @@ import { Placeholder } from "@tiptap/extensions";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Eye } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toolbar } from "./toolbar";
+import { mentionExtension, type Mentionable } from "./mention";
+import { notifyMention } from "@/lib/notification-actions";
 import { Presence, SyncBadge, useConnectionToasts } from "@/components/collab/status";
 import {
   useCollab,
@@ -28,12 +30,15 @@ export function DocEditor({
   branchId = null,
   me,
   readOnly,
+  members = [],
 }: {
   pageId: string;
   /** Edit one of the page's branches instead of the page itself. */
   branchId?: string | null;
   me: Me;
   readOnly: boolean;
+  /** People who can be @mentioned. */
+  members?: Mentionable[];
 }) {
   const collab = useCollab(
     pageId,
@@ -46,10 +51,34 @@ export function DocEditor({
     branchId,
   );
   if (!collab) return <EditorSkeleton />;
-  return <LiveEditor collab={collab} me={me} readOnly={readOnly} />;
+  const onMention = (userId: string, snippet: string) =>
+    void notifyMention(pageId, branchId, [userId], snippet).then(
+      (sent) => sent > 0 && toast.success(`${members.find((m) => m.id === userId)?.name ?? "They"} will be notified`),
+      () => {},
+    );
+  return <LiveEditor collab={collab} me={me} readOnly={readOnly} members={members} onMention={onMention} />;
 }
 
-function LiveEditor({ collab, me, readOnly }: { collab: Collab; me: Me; readOnly: boolean }) {
+function LiveEditor({
+  collab,
+  me,
+  readOnly,
+  members,
+  onMention,
+}: {
+  collab: Collab;
+  me: Me;
+  readOnly: boolean;
+  members: Mentionable[];
+  onMention: (userId: string, snippet: string) => void;
+}) {
+  // Read through refs so the editor isn't rebuilt when the member list or callback changes.
+  const membersRef = useRef(members);
+  const onMentionRef = useRef(onMention);
+  useEffect(() => {
+    membersRef.current = members;
+    onMentionRef.current = onMention;
+  });
   const { doc, provider, tracker } = collab;
   const sync = useSyncState(provider);
   const pending = usePendingChanges(tracker);
@@ -67,8 +96,15 @@ function LiveEditor({ collab, me, readOnly }: { collab: Collab; me: Me; readOnly
         CollaborationCaret.configure({ provider, user: { name: me.name, color: me.color } }),
         TaskList,
         TaskItem.configure({ nested: true }),
+        // The refs are read only when someone types "@", never while rendering.
+        // eslint-disable-next-line react-hooks/refs
+        mentionExtension({
+          meId: me.id,
+          getMembers: () => membersRef.current,
+          onMention: (userId, snippet) => onMentionRef.current(userId, snippet),
+        }),
         Placeholder.configure({
-          placeholder: "Start writing… Type # and a space for a heading, - for a list, [] for a to-do",
+          placeholder: "Start writing… Type # for a heading, - for a list, [] for a to-do, @ to mention someone",
         }),
       ],
       editorProps: {

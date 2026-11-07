@@ -37,6 +37,7 @@ import {
   type Label,
 } from "@/lib/board-model";
 import { BoardColumn } from "./board-column";
+import { notifyAssigned } from "@/lib/notification-actions";
 import { CardDialog } from "./card-dialog";
 import { CardFace, type Member } from "./card-tile";
 import { LivePointers } from "./live-pointers";
@@ -57,10 +58,21 @@ export function BoardView({ pageId, branchId = null, ...rest }: Props) {
     branchId,
   );
   if (!collab) return <BoardSkeleton />;
-  return <LiveBoard collab={collab} {...rest} />;
+  const onAssigned = (userId: string, cardTitle: string) =>
+    void notifyAssigned(pageId, branchId, [userId], cardTitle).catch(() => {});
+  return <LiveBoard collab={collab} onAssigned={onAssigned} {...rest} />;
 }
 
-function LiveBoard({ collab, me, members, readOnly }: Omit<Props, "pageId" | "branchId"> & { collab: Collab }) {
+function LiveBoard({
+  collab,
+  me,
+  members,
+  readOnly,
+  onAssigned,
+}: Omit<Props, "pageId" | "branchId"> & {
+  collab: Collab;
+  onAssigned: (userId: string, cardTitle: string) => void;
+}) {
   const { doc, provider, tracker } = collab;
   const board = useBoardSnapshot(doc);
   const sync = useSyncState(provider);
@@ -245,6 +257,7 @@ function LiveBoard({ collab, me, members, readOnly }: Omit<Props, "pageId" | "br
         members={members}
         me={me}
         canEdit={canEdit}
+        onAssigned={onAssigned}
         onClose={() => setOpenCardId(null)}
         onDeleted={(card) =>
           toast(`“${card.title}” deleted`, {

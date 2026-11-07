@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db, schema } from "@/db";
 import { requireUser } from "@/lib/dal";
+import { notify } from "@/lib/notify";
 
 /**
  * Branch Server Actions. Like every action, each one re-checks that the
@@ -89,9 +90,24 @@ async function setStatus(branchId: string, status: "open" | "merged" | "closed")
   return { ok: true, url: access.url };
 }
 
-/** Records a merge the browser has just made through the sync server. */
+/** Records a merge the browser has just made through the sync server, and tells whoever started the branch. */
 export async function markBranchMerged(branchId: string) {
-  return setStatus(branchId, "merged");
+  const result = await setStatus(branchId, "merged");
+  if (result.ok) {
+    const access = await branchAccess(branchId);
+    if (access.ok) {
+      await notify([access.branch.createdBy], {
+        workspaceId: access.page.workspaceId,
+        actorId: access.user.id,
+        kind: "branch_merged",
+        pageId: access.page.id,
+        subject: access.page.title,
+        snippet: access.branch.name,
+        url: `/w/${access.slug}/p/${access.page.id}`,
+      });
+    }
+  }
+  return result;
 }
 
 /** Closes a branch without merging it. It stays readable, and can be reopened. */

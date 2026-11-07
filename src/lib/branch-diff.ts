@@ -21,6 +21,8 @@ function textOf(node: Y.XmlElement | Y.XmlText): string {
       .map((op) => (typeof op.insert === "string" ? op.insert : ""))
       .join("");
   }
+  // @mentions are inline nodes with no text of their own.
+  if (node.nodeName === "mention") return `@${node.getAttribute("label") ?? "someone"}`;
   return node
     .toArray()
     .map((child) => (child instanceof Y.XmlElement || child instanceof Y.XmlText ? textOf(child) : ""))

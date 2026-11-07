@@ -49,7 +49,7 @@ npm run dev
 - [x] **Phase 3 — Offline-first:** keep working offline, local copies in the browser, merge on reconnect
 - [x] **Phase 4 — Rewind:** version history and replay player
 - [x] **Phase 5 — Branches:** fork a page, compare, merge
-- [ ] **Phase 6 — Collaboration:** invites, permissions, mentions, inbox, ⌘K search
+- [x] **Phase 6 — Collaboration:** invites, permissions, mentions, inbox, ⌘K search
 - [ ] **Phase 7 — Sessions & automations:** timed retros with voting, when-then rules
 - [ ] **Phase 8 — Huddles:** peer-to-peer voice and Follow mode
 - [ ] **Phase 9 — Canvas & Catch-up:** infinite canvas and "while you were away" digest
@@ -140,6 +140,14 @@ A branch is a private copy of a doc or board that you (and anyone else) can edit
 - **Close.** Close a branch to drop it without merging; reopen it any time. Merged and closed branches become view-only for everyone, straight away, even people who have them open.
 
 How it works: the sync server makes the branch from the page the first time it's opened, so the two share their Yjs history. Merging just sends the page the branch changes it doesn't have yet, and Yjs combines them with whatever else changed. A branch also keeps a copy of the page as it was when the branch started (`page_branch.base`), which review compares against to show only the branch's own changes.
+
+### Collaboration
+
+- **Invites.** Owners and admins make invite links in **Settings → Members → Invite people**: pick the role, how long the link works (1, 7 or 30 days) and an optional note. Braid doesn't send email (that would need a paid service), so you copy the link and send it however you like. Someone without an account signs up from the link and lands back on it to join. Links can be revoked any time.
+- **Roles.** Owner (everything), admin (invite and manage people), member (edit), guest (view only). Owners and admins change roles and remove people from the members table; anyone can leave, except the last owner. The rules live in one place, `src/lib/permissions.ts`, used by both the UI and the server.
+- **@mentions.** Type **@** in a doc to mention someone. They get a notification quoting the sentence, and see their own mentions highlighted.
+- **Inbox.** Mentions, card assignments, merged branches and new members land in **Inbox**, with an unread count in the sidebar. Braid checks for new ones every 15 seconds while the tab is open and shows a toast for each.
+- **⌘K / Ctrl K.** Jump to any page, create a doc, board or canvas, go to Inbox, Trash or Settings, or switch workspace, all from the keyboard. There's also a **Search** button at the top of the sidebar.
 
 ## License
 

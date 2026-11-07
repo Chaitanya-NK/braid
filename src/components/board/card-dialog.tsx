@@ -35,6 +35,8 @@ type Props = {
   canEdit: boolean;
   onClose: () => void;
   onDeleted: (card: Card) => void;
+  /** Called when someone is newly assigned, so they get a notification. */
+  onAssigned?: (userId: string, cardTitle: string) => void;
 };
 
 export function CardDialog({ card, ...rest }: Props) {
@@ -48,7 +50,17 @@ export function CardDialog({ card, ...rest }: Props) {
   );
 }
 
-function CardDetail({ doc, card, columnTitle, members, me, canEdit, onClose, onDeleted }: Props & { card: Card }) {
+function CardDetail({
+  doc,
+  card,
+  columnTitle,
+  members,
+  me,
+  canEdit,
+  onClose,
+  onDeleted,
+  onAssigned,
+}: Props & { card: Card }) {
   const [newItem, setNewItem] = useState("");
   const set = (fields: Parameters<typeof updateCard>[2]) => updateCard(doc, card.id, fields);
   const creator = members.find((m) => m.id === card.createdBy);
@@ -208,11 +220,12 @@ function CardDetail({ doc, card, columnTitle, members, me, canEdit, onClose, onD
                     key={m.id}
                     disabled={!canEdit}
                     pressed={on}
-                    onPressedChange={(pressed) =>
+                    onPressedChange={(pressed) => {
                       set({
                         assignees: pressed ? [...card.assignees, m.id] : card.assignees.filter((id) => id !== m.id),
-                      })
-                    }
+                      });
+                      if (pressed) onAssigned?.(m.id, card.title);
+                    }}
                     className="h-auto min-h-9 justify-start px-2 font-normal text-foreground hover:text-foreground"
                   >
                     <MemberAvatar name={m.name} color={m.color} className="size-6" />

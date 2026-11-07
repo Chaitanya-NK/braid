@@ -8,6 +8,7 @@ import { useMemo } from "react";
 import type * as Y from "yjs";
 import { CardFace, type Member } from "@/components/board/card-tile";
 import { readBoard } from "@/lib/board-model";
+import { mentionDisplay } from "@/components/editor/mention";
 
 /** A read-only doc bound to the replay document; re-renders as steps apply. */
 export function ReplayDoc({ doc }: { doc: Y.Doc }) {
@@ -20,6 +21,7 @@ export function ReplayDoc({ doc }: { doc: Y.Doc }) {
         Collaboration.configure({ document: doc }),
         TaskList,
         TaskItem.configure({ nested: true }),
+        mentionDisplay(),
       ],
       editorProps: { attributes: { class: "braid-prose", "aria-label": "Document at this moment" } },
     },

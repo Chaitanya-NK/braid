@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNotNull, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { db, schema } from "@/db";
@@ -187,4 +187,75 @@ export async function requireBranch(slug: string, pageId: string, branchId: stri
   if (!found) notFound();
   const { base, ...branch } = found;
   return { ...ctx, branch, base: withBase && base ? base.toString("base64") : null };
+}
+
+/* --------------------------------- Invites -------------------------------- */
+
+/** A usable invite (not revoked, not expired), with its workspace and who made it. */
+export async function findInvite(token: string) {
+  const [row] = await db
+    .select({
+      invite: schema.workspaceInvite,
+      workspace: { id: schema.workspace.id, name: schema.workspace.name, slug: schema.workspace.slug },
+      inviter: schema.user.name,
+    })
+    .from(schema.workspaceInvite)
+    .innerJoin(schema.workspace, eq(schema.workspace.id, schema.workspaceInvite.workspaceId))
+    .innerJoin(schema.user, eq(schema.user.id, schema.workspaceInvite.createdBy))
+    .where(
+      and(
+        eq(schema.workspaceInvite.token, token),
+        isNull(schema.workspaceInvite.revokedAt),
+        gt(schema.workspaceInvite.expiresAt, new Date()),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/** Invites that still work, newest first. */
+export async function listInvites(workspaceId: string) {
+  return db
+    .select({
+      id: schema.workspaceInvite.id,
+      token: schema.workspaceInvite.token,
+      role: schema.workspaceInvite.role,
+      note: schema.workspaceInvite.note,
+      uses: schema.workspaceInvite.uses,
+      expiresAt: schema.workspaceInvite.expiresAt,
+      createdAt: schema.workspaceInvite.createdAt,
+      createdBy: schema.user.name,
+    })
+    .from(schema.workspaceInvite)
+    .innerJoin(schema.user, eq(schema.user.id, schema.workspaceInvite.createdBy))
+    .where(
+      and(
+        eq(schema.workspaceInvite.workspaceId, workspaceId),
+        isNull(schema.workspaceInvite.revokedAt),
+        gt(schema.workspaceInvite.expiresAt, new Date()),
+      ),
+    )
+    .orderBy(desc(schema.workspaceInvite.createdAt));
+}
+
+/* ------------------------------ Notifications ----------------------------- */
+
+export async function listNotifications(userId: string, workspaceId: string, limit = 100) {
+  return db
+    .select({
+      id: schema.notification.id,
+      kind: schema.notification.kind,
+      subject: schema.notification.subject,
+      snippet: schema.notification.snippet,
+      url: schema.notification.url,
+      createdAt: schema.notification.createdAt,
+      readAt: schema.notification.readAt,
+      actorName: schema.user.name,
+      actorId: schema.notification.actorId,
+    })
+    .from(schema.notification)
+    .leftJoin(schema.user, eq(schema.user.id, schema.notification.actorId))
+    .where(and(eq(schema.notification.userId, userId), eq(schema.notification.workspaceId, workspaceId)))
+    .orderBy(desc(schema.notification.createdAt))
+    .limit(limit);
 }

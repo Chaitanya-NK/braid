@@ -203,8 +203,67 @@ export const pageBranch = pgTable(
   (t) => [index("page_branch_page_idx").on(t.pageId)],
 );
 
+/**
+ * An invite link. Anyone with the link can join the workspace with its role
+ * until it expires or is revoked. Braid sends no email (to stay free), so
+ * the person inviting copies the link and shares it however they like.
+ */
+export const workspaceInvite = pgTable(
+  "workspace_invite",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    role: memberRole("role").notNull().default("member"),
+    // Optional note, e.g. who it's for. Shown in the list of invites.
+    note: text("note"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    uses: integer("uses").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    expiresAt: timestamp("expires_at").notNull(),
+    revokedAt: timestamp("revoked_at"),
+  },
+  (t) => [index("invite_workspace_idx").on(t.workspaceId)],
+);
+
+export const notificationKind = pgEnum("notification_kind", [
+  "mention",
+  "assigned",
+  "branch_merged",
+  "member_joined",
+]);
+
+/** One item in someone's inbox. `url` is where clicking it goes. */
+export const notification = pgTable(
+  "notification",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "cascade" }),
+    actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+    kind: notificationKind("kind").notNull(),
+    pageId: uuid("page_id").references(() => page.id, { onDelete: "cascade" }),
+    // What it's about: a page title, card title or branch name.
+    subject: text("subject").notNull(),
+    snippet: text("snippet"),
+    url: text("url").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    readAt: timestamp("read_at"),
+  },
+  (t) => [index("notification_user_idx").on(t.userId, t.createdAt)],
+);
+
 export type Workspace = typeof workspace.$inferSelect;
 export type Page = typeof page.$inferSelect;
 export type PageKind = (typeof pageKind.enumValues)[number];
+export type NotificationKind = (typeof notificationKind.enumValues)[number];
 export type BranchStatus = (typeof branchStatus.enumValues)[number];
 export type MemberRole = (typeof memberRole.enumValues)[number];

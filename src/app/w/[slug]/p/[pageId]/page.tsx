@@ -69,9 +69,10 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
     </h1>
   );
 
+  const members = await listMembers(workspace.id);
+
   // Boards use the full width and height, with their own scrolling.
   if (page.kind === "board") {
-    const members = await listMembers(workspace.id);
     return (
       <div className="flex h-dvh flex-col">
         {header}
@@ -98,7 +99,12 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
 
         {page.kind === "doc" ? (
           <div className="mt-4">
-            <DocEditor pageId={page.id} me={{ id: user.id, name: user.name, color }} readOnly={!canEdit} />
+            <DocEditor
+              pageId={page.id}
+              me={{ id: user.id, name: user.name, color }}
+              readOnly={!canEdit}
+              members={members.map((m) => ({ id: m.id, name: m.name, color: m.color }))}
+            />
           </div>
         ) : (
           <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-card p-10 text-center">

@@ -128,7 +128,13 @@ async function BranchContent({ params }: { params: Promise<{ slug: string; pageI
         {banner}
         <h1 className="mt-4 text-4xl font-bold tracking-tight">{page.title}</h1>
         <div className="mt-4">
-          <DocEditor pageId={page.id} branchId={branch.id} me={me} readOnly={!canEdit} />
+          <DocEditor
+            pageId={page.id}
+            branchId={branch.id}
+            me={me}
+            readOnly={!canEdit}
+            members={members.map((m) => ({ id: m.id, name: m.name, color: m.color }))}
+          />
         </div>
       </article>
     </div>
