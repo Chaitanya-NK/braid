@@ -47,7 +47,7 @@ npm run dev
 - [x] **Phase 1 — Live docs:** real-time editor with cursors and presence (Yjs, Tiptap, Hocuspocus)
 - [x] **Phase 2 — Live boards:** kanban with drag and drop, live pointers, cursor chat, card details, reactions
 - [x] **Phase 3 — Offline-first:** keep working offline, local copies in the browser, merge on reconnect
-- [ ] **Phase 4 — Rewind:** version history and replay player
+- [x] **Phase 4 — Rewind:** version history and replay player
 - [ ] **Phase 5 — Branches:** fork a page, compare, merge
 - [ ] **Phase 6 — Collaboration:** invites, permissions, mentions, inbox, ⌘K search
 - [ ] **Phase 7 — Sessions & automations:** timed retros with voting, when-then rules
@@ -116,6 +116,19 @@ Every doc and board you open is also saved in your browser (IndexedDB, via `y-in
 Next.js's `experimental.useOffline` makes navigations and Server Actions wait and retry instead of failing, and powers the offline banner. Reloading the page while offline still needs the network; a service worker (Phase 9+) would remove that limit.
 
 To try it: open a doc, then in Chrome DevTools → Network, switch **No throttling** to **Offline**.
+
+### Rewind
+
+The sync server keeps every change, not just the latest state. It groups each person's edits into steps (a step ends after 1 second of quiet or after 5 seconds of typing) and saves them to the `page_update` table with the author and time. Pages that existed before history was turned on get one starting step, credited to "Braid".
+
+Click **Rewind** on any doc or board to open the player:
+
+- Scrub the slider, step through one change at a time, or press play at 1×, 4× or 16×. **Skip pauses between edits** jumps over long gaps.
+- Each person has a lane, so you can see who changed what and when. Steps more than 10 minutes apart are shown as separate sessions.
+- **Copy link to this moment** gives a `?at=` link that opens Rewind at that exact step.
+- **Restore this moment** makes the page look like it did then, for everyone, live. The restore is a new change in history, so you can rewind past it and undo it. Guests and pages in the Trash can view history but can't restore.
+
+The player rebuilds the past in your browser by replaying the saved changes into a separate Yjs document, with a checkpoint every 25 steps so scrubbing stays fast.
 
 ## License
 

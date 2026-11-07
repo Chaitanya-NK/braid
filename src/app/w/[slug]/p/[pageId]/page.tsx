@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { History } from "lucide-react";
 import { Suspense } from "react";
 import { KIND_LABEL, PageIcon } from "@/components/page-icon";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listMembers, requirePage } from "@/lib/dal";
 import { timeAgo } from "@/lib/utils";
@@ -35,7 +37,16 @@ async function PageContent({ params }: { params: Promise<{ slug: string; pageId:
           {page.title}
         </span>
       </nav>
-      {canEdit && <MoveToTrashButton pageId={page.id} title={page.title} />}
+      <div className="flex items-center gap-1">
+        {page.kind !== "canvas" && (
+          <Button asChild variant="ghost" size="sm">
+            <Link href={`/w/${workspace.slug}/p/${page.id}/rewind`}>
+              <History aria-hidden="true" /> Rewind
+            </Link>
+          </Button>
+        )}
+        {canEdit && <MoveToTrashButton pageId={page.id} title={page.title} />}
+      </div>
     </header>
   );
 

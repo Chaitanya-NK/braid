@@ -15,6 +15,13 @@
       "when": 1793966527002,
       "tag": "0001_page_doc",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794021026317,
+      "tag": "0002_page_history",
+      "breakpoints": true
     }
   ]
 }

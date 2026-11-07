@@ -115,15 +115,17 @@ export function useCollab(pageId: string, userId: string, onAccessDenied: () => 
 
 export type SyncState = "connecting" | "syncing" | "saving" | "saved" | "offline";
 
-/** One word for the header: are my edits safely on the server? */
-export function useSyncState(provider: HocuspocusProvider): SyncState {
+/** One word for the header: are my edits safely on the server? (null provider = not created yet) */
+export function useSyncState(provider: HocuspocusProvider | null): SyncState {
   return useSyncExternalStore(
     (notify) => {
+      if (!provider) return () => {};
       const events = ["status", "synced", "unsyncedChanges", "disconnect", "connect"];
       events.forEach((e) => provider.on(e, notify));
       return () => events.forEach((e) => provider.off(e, notify));
     },
     () => {
+      if (!provider) return "connecting";
       const status = provider.configuration.websocketProvider.status;
       if (status === WebSocketStatus.Disconnected) return "offline";
       if (status === WebSocketStatus.Connecting) return "connecting";

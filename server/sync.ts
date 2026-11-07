@@ -12,6 +12,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../src/db/schema";
 import { seedBoard } from "../src/lib/board-model";
+import { HistoryRecorder } from "./history";
 import { docName, verifySyncToken, type SyncClaims } from "../src/lib/sync-token";
 
 try {
@@ -22,6 +23,7 @@ if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set. Copy .e
 
 const db = drizzle(postgres(process.env.DATABASE_URL, { max: 5 }), { schema });
 const port = Number(process.env.SYNC_PORT ?? 1234);
+const history = new HistoryRecorder(db);
 
 const PAGE_DOC = /^page:([0-9a-f-]{36})$/i;
 
@@ -52,6 +54,8 @@ const server = new Server<{ user: SyncClaims }>({
   // server, so two people opening it at once can't both add them.
   async afterLoadDocument({ document, documentName }) {
     const pageId = pageIdOf(documentName);
+    // Before seeding, so a brand-new board's history starts with its columns.
+    await history.ensureBaseline(pageId, document);
     const [row] = await db
       .select({ kind: schema.page.kind })
       .from(schema.page)
@@ -60,6 +64,19 @@ const server = new Server<{ user: SyncClaims }>({
     if (row?.kind === "board" && seedBoard(document)) {
       console.log(`Seeded new board ${pageId}`);
     }
+  },
+
+  // Every change goes into Rewind history, credited to whoever made it.
+  async onChange({ documentName, update, context }) {
+    history.record(pageIdOf(documentName), context?.user?.userId ?? null, update);
+  },
+
+  async beforeUnloadDocument({ documentName }) {
+    await history.flushPage(pageIdOf(documentName));
+  },
+
+  async onDestroy() {
+    await history.flushAll();
   },
 
   extensions: [
@@ -94,3 +111,11 @@ const server = new Server<{ user: SyncClaims }>({
 });
 
 server.listen();
+
+// Save any half-finished history batches when the server is stopped.
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, async () => {
+    await history.flushAll();
+    process.exit(0);
+  });
+}

@@ -1,4 +1,5 @@
 import {
+  bigserial,
   boolean,
   customType,
   index,
@@ -144,6 +145,29 @@ export const pageDoc = pgTable("page_doc", {
   state: bytea("state").notNull(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+/**
+ * Rewind history: every change to a page, as Yjs updates. The sync server
+ * groups each person's edits into roughly one-second batches, so a row is
+ * "what Asha typed in that second". Replaying the rows in order rebuilds
+ * the page at any moment. user_id is null for changes made by Braid itself
+ * (starter columns, or the page's state from before history was recorded).
+ */
+export const pageUpdate = pgTable(
+  "page_update",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    pageId: uuid("page_id")
+      .notNull()
+      .references(() => page.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    update: bytea("update").notNull(),
+    // How many raw updates were merged into this row (roughly keystrokes).
+    edits: integer("edits").notNull().default(1),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("page_update_page_idx").on(t.pageId, t.id)],
+);
 
 export type Workspace = typeof workspace.$inferSelect;
 export type Page = typeof page.$inferSelect;
