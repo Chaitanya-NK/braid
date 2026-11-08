@@ -11,6 +11,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import * as Y from "yjs";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { connectionOptions } from "../src/db/connection";
 import * as schema from "../src/db/schema";
 import { seedBoard } from "../src/lib/board-model";
 import { AutomationEngine } from "./automations";
@@ -23,8 +24,11 @@ try {
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set. Copy .env.example to .env.");
 
-const db = drizzle(postgres(process.env.DATABASE_URL, { max: 5 }), { schema });
-const port = Number(process.env.SYNC_PORT ?? 1234);
+const db = drizzle(postgres(process.env.DATABASE_URL, connectionOptions(process.env.DATABASE_URL, "sync")), {
+  schema,
+});
+// Hosts like Render tell the server which port to use in PORT.
+const port = Number(process.env.PORT ?? process.env.SYNC_PORT ?? 1234);
 const history = new HistoryRecorder(db);
 /** Marks the starter content Braid adds to new pages. */
 const SEED = Symbol("seed");
@@ -105,6 +109,18 @@ const server = new Server<{ user: SyncClaims }>({
   port,
   address: "0.0.0.0",
   name: "braid-sync",
+  // Plain HTTP: /health answers hosting health checks (and checks the database).
+  async onRequest({ request, response }) {
+    if (request.url !== "/health") return;
+    try {
+      await db.execute(sql`select 1`);
+      response.writeHead(200, { "Content-Type": "text/plain" }).end("ok");
+    } catch {
+      response.writeHead(503, { "Content-Type": "text/plain" }).end("database unreachable");
+    }
+    throw null; // handled: skip Hocuspocus's default reply
+  },
+
   // Save a second after people stop typing, and at least every 10 seconds.
   debounce: 1000,
   maxDebounce: 10_000,

@@ -1,0 +1,31 @@
+# Render Blueprint for Braid's sync server (the live-editing WebSocket server).
+# The Next.js app runs on Vercel; this runs the long-lived process Vercel can't.
+# Docs: docs/DEPLOY.md
+services:
+  - type: web
+    name: braid-sync
+    runtime: node
+    plan: free
+    # Keep it near the database (Supabase) and the app (Vercel), both in Singapore.
+    region: singapore
+    buildCommand: npm ci --include=dev
+    startCommand: npm run sync
+    healthCheckPath: /health
+    autoDeploy: true
+    # Only redeploy when code the sync server uses changes.
+    buildFilter:
+      paths:
+        - server/**
+        - src/db/**
+        - src/lib/**
+        - package.json
+        - package-lock.json
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Supabase "Session pooler" connection string (port 5432).
+      - key: DATABASE_URL
+        sync: false
+      # Must be the same value as on Vercel: it signs the tickets browsers use to connect.
+      - key: BETTER_AUTH_SECRET
+        sync: false

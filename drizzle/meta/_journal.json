@@ -50,6 +50,20 @@
       "when": 1794034969098,
       "tag": "0006_catch_up",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794107844691,
+      "tag": "0007_rate_limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794107845328,
+      "tag": "0008_lock_down_data_api",
+      "breakpoints": true
     }
   ]
 }
