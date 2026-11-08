@@ -40,6 +40,7 @@ import {
   moveShapes,
   readCanvas,
   shapeAt,
+  SHAPE_NAMES,
   shapesMap,
   STICKY_COLORS,
   updateShape,
@@ -230,14 +231,15 @@ function LiveCanvas({ collab, me, readOnly }: { collab: Collab; me: Member; read
     setCam({ zoom, x: box.x + box.w / 2 - rect.width / 2 / zoom, y: box.y + box.h / 2 - rect.height / 2 / zoom });
   }, [doc]);
 
-  // Start zoomed to fit what's there.
+  // When the canvas opens, zoom to fit what's already on it, once. Decided as
+  // soon as the content has loaded (or we know we're offline), so drawing the
+  // first shape on an empty canvas never moves the view under your mouse.
   const fitted = useRef(false);
   useEffect(() => {
-    if (!fitted.current && shapes.length > 0) {
-      fitted.current = true;
-      fit();
-    }
-  }, [shapes.length, fit]);
+    if (fitted.current || sync === "connecting" || sync === "syncing") return;
+    fitted.current = true;
+    if (shapes.length > 0) fit();
+  }, [sync, shapes.length, fit]);
 
   // Wheel: scroll pans, Ctrl/⌘ + scroll (and pinch) zooms. Needs a non-passive listener.
   useEffect(() => {
@@ -659,7 +661,7 @@ function LiveCanvas({ collab, me, readOnly }: { collab: Collab; me: Member; read
               >
                 <textarea
                   autoFocus
-                  aria-label={`Text for ${editingShape.type === "sticky" ? "sticky note" : editingShape.type}`}
+                  aria-label={`Text for ${SHAPE_NAMES[editingShape.type].toLowerCase()}`}
                   defaultValue={editingShape.text}
                   onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => {
