@@ -27,6 +27,15 @@ const allowedHosts = [
   ...(customHost ? [customHost] : []),
 ];
 
+/** The origin a request was sent to, as the browser saw it (behind Vercel's or Codespaces' proxy). */
+function ownOrigin(request: Request) {
+  const first = (value: string | null) => value?.split(",")[0]?.trim() || null;
+  const host = first(request.headers.get("x-forwarded-host")) ?? first(request.headers.get("host"));
+  if (!host) return null;
+  const proto = first(request.headers.get("x-forwarded-proto")) ?? new URL(request.url).protocol.replace(":", "");
+  return `${proto}://${host}`;
+}
+
 export const auth = betterAuth({
   baseURL: {
     allowedHosts,
@@ -36,12 +45,21 @@ export const auth = betterAuth({
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
         : "http://localhost:3000"),
   },
-  trustedOrigins: [
-    "http://localhost:3000",
-    "https://*.app.github.dev",
-    ...vercelHosts.map((h) => `https://${h}`),
-    ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
-  ],
+  // Sign-in and sign-up must come from Braid's own pages. Besides the fixed
+  // list, trust the address this request was sent to: a request from the
+  // same address is same-origin, which is exactly what this check is for.
+  // (A Vercel project has several addresses, e.g. per deployment, so a
+  // fixed list can miss the one you're on.)
+  trustedOrigins: (request?: Request) => {
+    const fixed = [
+      "http://localhost:3000",
+      "https://*.app.github.dev",
+      ...vercelHosts.map((h) => `https://${h}`),
+      ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+    ];
+    const self = request ? ownOrigin(request) : null;
+    return self ? [...fixed, self] : fixed;
+  },
   advanced: { trustedProxyHeaders: true },
   // Counted in the database: on Vercel each function instance has its own
   // memory, so in-memory counts wouldn't add up across instances.
