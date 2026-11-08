@@ -6,9 +6,10 @@ try {
 } catch {}
 
 /**
- * Migrations run against MIGRATION_DATABASE_URL when it's set (for Supabase:
- * the session pooler on port 5432, since the transaction pooler can't run
- * migrations), otherwise DATABASE_URL. Remote databases get TLS.
+ * Migrations run against MIGRATION_DATABASE_URL when it's set (the
+ * database's direct string: Neon without "-pooler", Supabase's session
+ * pooler on port 5432; transaction poolers can't run migrations), otherwise
+ * DATABASE_URL. Remote databases get TLS.
  */
 function migrationUrl() {
   const raw = process.env.MIGRATION_DATABASE_URL || process.env.DATABASE_URL || "postgres://braid:braid@localhost:5432/braid";

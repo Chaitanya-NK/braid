@@ -31,9 +31,9 @@ npm run dev
 
 ## Deploy it (free)
 
-The app runs on **Vercel**, the database on **Supabase**, and the live-editing sync server on **Render** (Vercel can't host long-lived WebSocket servers). All three have free tiers and no card is needed. Step-by-step: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
+The app runs on **Vercel**, the database on **Neon** or **Supabase**, and the live-editing sync server on **Render** (Vercel can't host long-lived WebSocket servers). All have free tiers and no card is needed. Step-by-step: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
 
-The same code runs locally and deployed: `src/db/connection.ts` adjusts the database settings (TLS, Supabase's pooler), the sync server listens on `PORT` and answers `/health`, and `vercel.json` / `render.yaml` hold the platform settings.
+The same code runs locally and deployed: `src/db/connection.ts` adjusts the database settings (TLS, Neon's and Supabase's poolers), the sync server listens on `PORT` and answers `/health`, and `vercel.json` / `render.yaml` hold the platform settings.
 
 ## Scripts
 

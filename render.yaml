@@ -6,7 +6,7 @@ services:
     name: braid-sync
     runtime: node
     plan: free
-    # Keep it near the database (Supabase) and the app (Vercel), both in Singapore.
+    # Keep it near the database and the app (Vercel), all in Singapore.
     region: singapore
     buildCommand: npm ci --include=dev
     startCommand: npm run sync
@@ -23,7 +23,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
-      # Supabase "Session pooler" connection string (port 5432).
+      # The database's direct connection string (Neon: without "-pooler";
+      # Supabase: the "Session pooler" one, port 5432). See docs/DEPLOY.md.
       - key: DATABASE_URL
         sync: false
       # Must be the same value as on Vercel: it signs the tickets browsers use to connect.
